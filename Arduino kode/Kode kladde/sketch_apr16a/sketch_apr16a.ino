@@ -34,6 +34,21 @@ void setup() {
   Serial.begin(9600);
 }
 
+void sleep(){
+
+
+
+
+}
+
+
+void Ultra_Sense(){
+
+
+
+  
+}
+
 void loop() {
   if (digitalRead(buttonPin) == HIGH) {
     delay(10);
@@ -44,7 +59,7 @@ void loop() {
         moveForward();
         i = 1;
       } else {
-        Serial.println("Backward");
+      Serial.println("Backward");
         moveBackward();
         i = 0;
       }
