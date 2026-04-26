@@ -1,138 +1,57 @@
-#include <AccelStepper.h>
+﻿#include <Arduino.h>
+#include <Stepper.h>
 
-/* =========================================================
-   STEPMOTOR – 28BYJ‑48 + ULN2003
-   ---------------------------------------------------------
-   VIGTIGT:
-   - HALF‑STEP for bedre moment
-   - KUN sikre ESP8266‑GPIO’er
-   - Rækkefølge: IN1, IN2, IN3, IN4
-   ========================================================= */
+const int stepsPerRevolution = 2048;
+const int moveDistance = 512;
+const int buttonPin = 15; // D8
 
-AccelStepper stepMotor(
-  AccelStepper::HALF4WIRE,
-  14, // D5  ->  IN1
-  13, // D6  ->  IN2
-  12, // D7  ->  IN3
-  5   // D1  ->  IN4
-);
+// Virkende wiring:
+// D5 -> IN1
+// D7 -> IN2
+// D6 -> IN3
+// D1 -> IN4
+Stepper myStepper(stepsPerRevolution, 14, 12, 13, 5);
 
-/* =========================================================
-   ULTRASONIC SENSOR (HC‑SR04 eller lign.)
-   ---------------------------------------------------------
-   Disse pins må gerne være boot‑pins, da sensoren er passiv
-   ========================================================= */
+uint8_t i = 0;
 
-const int trigPin = 0;  // D3 (GPIO0)
-const int echoPin = 2;  // D4 (GPIO2) – VIA SPÆNDINGSDELER!
+void moveForward() {
+  for (int stepCount = 0; stepCount < moveDistance; stepCount++) {
+    myStepper.step(1);
+    yield();
+  }
+}
 
-/* =========================================================
-   RESET‑KNAP & STATUS‑LED
-   ========================================================= */
-
-const int resetPin = 15; // D8 (GPIO15) – INPUT_PULLUP
-const int ledPin   = 16; // D0 (GPIO16)
-
-/* =========================================================
-   KALIBRERING
-   ========================================================= */
-
-const float emptyDistance = 40.0;              // cm – mål selv
-const float fullThreshold = emptyDistance*0.2; // 80 % fuld
-
-/* =========================================================
-   TILSTAND
-   ========================================================= */
-
-bool bagClosed = false;
-
-/* =========================================================
-   SETUP
-   ========================================================= */
+void moveBackward() {
+  for (int stepCount = 0; stepCount < moveDistance; stepCount++) {
+    myStepper.step(-1);
+    yield();
+  }
+}
 
 void setup() {
-
-  /* --- I/O --- */
-  pinMode(trigPin, OUTPUT);
-  pinMode(echoPin, INPUT);
-
-  pinMode(resetPin, INPUT_PULLUP);
-  pinMode(ledPin, OUTPUT);
-  digitalWrite(ledPin, LOW);
-
-  /* --- STEPMOTOR PARAMETRE ---
-     LAVE værdier = stabil drift */
-  stepMotor.setMaxSpeed(800);       // steps/sek
-  stepMotor.setAcceleration(100);   // steps/sek²
-  stepMotor.setCurrentPosition(0);
-
-  /* --- SERIAL --- */
+  pinMode(buttonPin, INPUT);
+  myStepper.setSpeed(6);
   Serial.begin(9600);
-  Serial.println("ESP8266 skraldesystem – HALF‑STEP startet");
 }
-
-/* =========================================================
-   AFSTANDSMÅLING
-   ========================================================= */
-
-float getDistance() {
-  digitalWrite(trigPin, LOW);
-  delayMicroseconds(2);
-
-  digitalWrite(trigPin, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(trigPin, LOW);
-
-  long duration = pulseIn(echoPin, HIGH, 30000); // 30 ms timeout
-  if (duration == 0) return -1;
-
-  return duration * 0.034 / 2.0;
-}
-
-/* =========================================================
-   LOOP
-   ========================================================= */
 
 void loop() {
+  if (digitalRead(buttonPin) == HIGH) {
+    delay(10);
 
-  /* ---------- RESET: ÅBN POSEN ---------- */
-  if (digitalRead(resetPin) == LOW) {
+    if (digitalRead(buttonPin) == HIGH) {
+      if (i == 0) {
+        Serial.println("Forward");
+        moveForward();
+        i = 1;
+      } else {
+        Serial.println("Backward");
+        moveBackward();
+        i = 0;
+      }
 
-    Serial.println("Reset trykket – åbner pose");
-    digitalWrite(ledPin, HIGH);
-
-    stepMotor.move(-3072);          // 1,5 omgang tilbage
-    stepMotor.runToPosition();
-
-    bagClosed = false;
-
-    delay(1000);                    // debounce
-    digitalWrite(ledPin, LOW);
-
-    Serial.println("Pose åbnet – klar");
+      while (digitalRead(buttonPin) == HIGH) {
+        delay(10);
+      }
+    }
   }
-
-  /* ---------- MÅLING ---------- */
-  float distance = getDistance();
-
-  Serial.print("Afstand: ");
-  Serial.print(distance);
-  Serial.println(" cm");
-
-  /* ---------- LUK POSEN ---------- */
-  if (distance > 0 &&
-      distance <= fullThreshold &&
-      !bagClosed) {
-
-    Serial.println("80 % fuld – lukker posen");
-
-    stepMotor.move(3072);           // 1,5 omgang frem
-    stepMotor.runToPosition();
-
-    bagClosed = true;
-
-    Serial.println("Pose lukket");
-  }
-
-  delay(1000);
 }
