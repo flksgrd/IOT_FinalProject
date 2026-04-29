@@ -122,6 +122,7 @@ void loop() {
 
         if (digitalRead(buttonPin) == HIGH) {   
           delay(100);
+          moveForward(512);
           CurrentState = LOAD;
         }
       }
