@@ -1,13 +1,16 @@
 ﻿#include <Arduino.h>
 #include <Stepper.h>
 
-const int stepsPerRevolution = 2048;
-const int moveDistance = 512;
-const int buttonPin = 15; // D8
-volatile uint8_t CloseBin = 0; 
+
+// der skal sikres at stepperen kan køre begge veje når nu steps per revolution er uint
+const uint16_t stepsPerRevolution = 2048; //16 bits to be able to hold 2048 in binary
+const uint16_t moveDistance = 512; //16 bits to be able to hold 512 in binary
+const uint8_t buttonPin = 15; // D8
+volatile uint8_t CloseBin = 0; // volatile to make sure the variable value is not optimized out of memory
 const uint8_t echoPin = 2;
 const uint8_t trigPin = 0;
-
+const uint8_t LED_pin = 7; //SD0/MISO
+const uint8_t INT_pin 9; //external interrupt pin
 // Virkende wiring:
 // D5 -> IN1
 // D7 -> IN2
@@ -49,6 +52,7 @@ void setup() {
   pinMode(trigPin, OUTPUT);
   myStepper.setSpeed(6);
   Serial.begin(9600);
+  attachInterrupt(digitalPinToInterrupt(INT_pin), Lys, RISING); //SKAL MÅSKE BRUGES
 }
 /* Powersaving sleep mode 
 void sleep(){
@@ -79,6 +83,17 @@ void Ultra_Sense(){
   }
   delay(20);
 }
+
+
+/*
+void Ligthsens(){
+
+int sensor = analogRead(A0);
+int PWMValue = map(sensor, 0, 1023, 0, 1023);
+analogWrite(LED_pin, pwmValue)
+
+} 
+*/
 
 void loop() {
     
@@ -114,7 +129,7 @@ void loop() {
       CurrentState = EMPTY_ME;
 
     break; 
-    case EMPTY_ME: 
+    case EMPTY_ME: //releases trash bag strings and returns to load when button is pressed.
       Serial.println("EMPTY_ME");
       delay(100);
       if(digitalRead(buttonPin) == HIGH){
