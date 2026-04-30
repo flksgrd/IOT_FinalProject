@@ -1,6 +1,8 @@
 ﻿#include <Arduino.h>
 #include <Stepper.h>
-
+extern "C"{
+  #include "user_interface.h"  
+  }
 
 // der skal sikres at stepperen kan køre begge veje når nu steps per revolution er uint
 const uint16_t stepsPerRevolution = 2048; //16 bits to be able to hold 2048 in binary
@@ -10,7 +12,8 @@ volatile uint8_t CloseBin = 0; // volatile to make sure the variable value is no
 const uint8_t echoPin = 2;
 const uint8_t trigPin = 0;
 const uint8_t LED_pin = 7; //SD0/MISO
-const uint8_t INT_pin 9; //external interrupt pin
+const uint8_t INT_pin = 9; //external interrupt pin
+
 // Virkende wiring:
 // D5 -> IN1
 // D7 -> IN2
@@ -31,7 +34,7 @@ State CurrentState = LOAD;
 
 Stepper myStepper(stepsPerRevolution, 14, 12, 13, 5);
 
-void moveForward() {
+void moveForward(int x) {
   for (int stepCount = 0; stepCount < moveDistance; stepCount++) {
     myStepper.step(1);
     yield();
@@ -52,7 +55,8 @@ void setup() {
   pinMode(trigPin, OUTPUT);
   myStepper.setSpeed(6);
   Serial.begin(9600);
-  attachInterrupt(digitalPinToInterrupt(INT_pin), Lys, RISING); //SKAL MÅSKE BRUGES
+  wifi_set_sleep_type(LIGHT_SLEEP_T);
+ // attachInterrupt(digitalPinToInterrupt(INT_pin), Lys, RISING); //SKAL MÅSKE BRUGES
 }
 /* Powersaving sleep mode 
 void sleep(){
@@ -120,12 +124,15 @@ void loop() {
 
     case CHECK: 
       Serial.println("CHECK");
+      Serial.println("SLEEP_ACTIVE");
+      delay(5000);
+      Serial.println("AWAKE!");
       Ultra_Sense();
     break;
 
     case CLOSE: 
       Serial.println("CLOSE");
-      moveBackward(512);
+      moveBackward(8*512);
       CurrentState = EMPTY_ME;
 
     break; 
@@ -137,7 +144,7 @@ void loop() {
 
         if (digitalRead(buttonPin) == HIGH) {   
           delay(100);
-          moveForward(512);
+          moveForward(8*512);
           CurrentState = LOAD;
         }
       }
