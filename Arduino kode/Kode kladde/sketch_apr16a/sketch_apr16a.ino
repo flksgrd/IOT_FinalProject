@@ -58,10 +58,7 @@ void setup() {
   wifi_set_sleep_type(LIGHT_SLEEP_T);
  // attachInterrupt(digitalPinToInterrupt(INT_pin), Lys, RISING); //SKAL MÅSKE BRUGES
 }
-/* Powersaving sleep mode 
-void sleep(){
 
-}*/
 
 
 void Ultra_Sense(){
@@ -118,7 +115,6 @@ void loop() {
         CurrentState = LOAD; 
             
         }
-
       }
     break;
 
