@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1e293b">
+  <title>Smart Trash Bin</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 1.5rem;
+      min-height: 100vh;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    h1 { font-size: 1.5rem; margin-bottom: 1.5rem; text-align: center; }
+    .stat {
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 1.25rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+    .stat .label { color: #94a3b8; font-size: 0.95rem; }
+    .stat .value { font-size: 1.75rem; font-weight: 600; }
+    .stat .unit { color: #94a3b8; font-size: 0.95rem; margin-left: 0.25rem; }
+    .stat.bags .value { color: #22c55e; }
+    .stat.bags.low .value { color: #ef4444; }
+    .form {
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 1.25rem;
+      margin-top: 1.5rem;
+    }
+    .form label { display: block; color: #94a3b8; margin-bottom: 0.5rem; }
+    .form-row { display: flex; gap: 0.5rem; }
+    input[type="number"] {
+      flex: 1;
+      padding: 0.75rem;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      color: #e2e8f0;
+      font-size: 1.1rem;
+      min-width: 0;
+    }
+    input[type="number"]:focus { outline: none; border-color: #3b82f6; }
+    button {
+      padding: 0.75rem 1.5rem;
+      background: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button:active { background: #2563eb; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .toast {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(120px);
+      background: #22c55e;
+      color: white;
+      padding: 0.75rem 1.25rem;
+      border-radius: 8px;
+      transition: transform 0.3s ease;
+      font-weight: 500;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+    .toast.error { background: #ef4444; }
+    .footer {
+      text-align: center;
+      color: #64748b;
+      font-size: 0.85rem;
+      margin-top: 1.5rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>🗑️ Smart Trash Bin</h1>
+
+  <div class="stat bags" id="bagsStat">
+    <span class="label">Poser tilbage</span>
+    <span><span class="value" id="bags">--</span></span>
+  </div>
+
+  <div class="stat">
+    <span class="label">Afstand</span>
+    <span><span class="value" id="dist">--</span><span class="unit"> cm</span></span>
+  </div>
+
+  <div class="stat">
+    <span class="label">Tilstand</span>
+    <span class="value" id="state">--</span>
+  </div>
+
+  <div class="form">
+    <label for="newBags">Sæt antal poser</label>
+    <div class="form-row">
+      <input type="number" id="newBags" min="0" max="999" placeholder="f.eks. 15" inputmode="numeric">
+      <button id="setBtn">Gem</button>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span id="lastUpdate">Henter…</span>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const CHANNEL = 3364403;
+    const READ_KEY = 'U38AWRSBJVBTPPJK';
+    const WRITE_KEY = 'DAFOBTGX2VWN91LU';
+    const LOW_THRESHOLD = 3;
+    const REFRESH_MS = 5000;
+
+    const STATE_NAMES = ['LOAD', 'CHECK', 'CLOSE', 'EMPTY_ME'];
+
+    function showToast(msg, isError) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.toggle('error', !!isError);
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2500);
+    }
+
+    async function refresh() {
+      try {
+        const url = `https://api.thingspeak.com/channels/${CHANNEL}/feeds.json?api_key=${READ_KEY}&results=1`;
+        const r = await fetch(url, { cache: 'no-store' });
+        const j = await r.json();
+        const f = (j.feeds || [])[0];
+        if (!f) {
+          document.getElementById('lastUpdate').textContent = 'Ingen data endnu';
+          return;
+        }
+
+        const bags = parseInt(f.field2, 10);
+        document.getElementById('bags').textContent = isNaN(bags) ? '--' : bags;
+        document.getElementById('bagsStat').classList.toggle('low', !isNaN(bags) && bags <= LOW_THRESHOLD);
+
+        const dist = parseFloat(f.field1);
+        document.getElementById('dist').textContent = isNaN(dist) ? '--' : dist.toFixed(1);
+
+        const stateIdx = parseInt(f.field3, 10);
+        document.getElementById('state').textContent = STATE_NAMES[stateIdx] || '--';
+
+        const ts = new Date(f.created_at);
+        document.getElementById('lastUpdate').textContent = `Sidst opdateret: ${ts.toLocaleTimeString('da-DK')}`;
+      } catch (e) {
+        document.getElementById('lastUpdate').textContent = 'Kunne ikke kontakte ThingSpeak';
+      }
+    }
+
+    async function setBags() {
+      const inp = document.getElementById('newBags');
+      const btn = document.getElementById('setBtn');
+      const n = parseInt(inp.value, 10);
+      if (isNaN(n) || n < 0) { showToast('Ugyldigt tal', true); return; }
+
+      btn.disabled = true;
+      btn.textContent = 'Sender…';
+      try {
+        const url = `https://api.thingspeak.com/update?api_key=${WRITE_KEY}&field5=${n}`;
+        const r = await fetch(url);
+        const txt = (await r.text()).trim();
+        if (txt === '0') {
+          showToast('ThingSpeak afviste – vent 15s og prøv igen', true);
+        } else {
+          showToast(`Sat til ${n} poser – ESP henter om <30s`);
+          inp.value = '';
+          setTimeout(refresh, 35000);
+        }
+      } catch (e) {
+        showToast('Netværksfejl', true);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Gem';
+      }
+    }
+
+    document.getElementById('setBtn').addEventListener('click', setBags);
+    document.getElementById('newBags').addEventListener('keydown', e => {
+      if (e.key === 'Enter') setBags();
+    });
+
+    refresh();
+    setInterval(refresh, REFRESH_MS);
+  </script>
+</body>
+</html>
