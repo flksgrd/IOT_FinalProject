@@ -3,6 +3,9 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
 #include <WiFiClient.h>
+extern "C"{
+  #include "user_interface.h"
+}
 
 // der skal sikres at stepperen kan køre begge veje når nu steps per revolution er uint
 const uint16_t stepsPerRevolution = 2048; //16 bits to be able to hold 2048 in binary
@@ -13,12 +16,14 @@ const uint8_t echoPin = 2;
 const uint8_t trigPin = 0;
 const uint8_t LED_pin = 7; //SD0/MISO
 const uint8_t INT_pin = 9; //external interrupt pin
-
+const uint8_t driver_enable = 1; 
+//const uint8_t SDA_pin = 4; // D2
+//const uint8_t SCL_pin = 5; // D1 
 // Virkende wiring:
 // D5 -> IN1
 // D7 -> IN2
 // D6 -> IN3
-// D1 -> IN4
+// D0 -> IN4
 
 // WiFi (UDFYLD inden upload)
 const char* WIFI_SSID     = "EKB";
@@ -35,8 +40,8 @@ const unsigned long TS_READ_INTERVAL = 30000UL;
 // Posekontrol: bagsRemaining tæller ned ved EMPTY_ME->LOAD (ny pose isat).
 // pendingBagFull sættes ved CLOSE-overgang så IFTTT kun fyres én gang pr. fyldning.
 // tsDataDirty markerer at der er nye værdier til næste throttle-vindue.
-uint16_t bagsRemaining = 10;
-const uint16_t BAGS_LOW_THRESHOLD = 2;
+uint8_t bagsRemaining = 10;
+const uint8_t BAGS_LOW_THRESHOLD = 2;
 long lastField5EntryId = -1;
 bool pendingBagFull = false;
 bool tsDataDirty = true;
@@ -59,17 +64,22 @@ State CurrentState = LOAD;
 Stepper myStepper(stepsPerRevolution, 14, 12, 13, 5);
 
 void moveForward(int x) {
+  digitalWrite(driver_enable, HIGH);
   for (int stepCount = 0; stepCount < moveDistance; stepCount++) {
     myStepper.step(1);
     yield();
   }
+digitalWrite(driver_enable, LOW);
 }
 
 void moveBackward(int x) {
+  digitalWrite(driver_enable, HIGH);
   for (int stepCount = 0; stepCount < x; stepCount++) {
     myStepper.step(-1);
     yield();
   }
+digitalWrite(driver_enable, LOW);
+
 }
 
 
@@ -90,6 +100,7 @@ void setup() {
   pinMode(buttonPin, INPUT);
   pinMode(echoPin, INPUT);
   pinMode(trigPin, OUTPUT);
+  pinMode(driver_enable, OUTPUT);
   myStepper.setSpeed(6);
   Serial.begin(9600);
   wifi_set_sleep_type(LIGHT_SLEEP_T);
@@ -197,17 +208,19 @@ void tsTick() {
 }
 
 void loop() {
-
+digitalWrite(driver_enable, LOW);
   // State machine switch case
   switch(CurrentState){
 
     case LOAD:
+    
       Serial.println("LOAD");
       if (digitalRead(buttonPin) == HIGH) {
           delay(100);
 
         if (digitalRead(buttonPin) == HIGH) {
           moveBackward(50);
+          digitalWrite(driver_enable, LOW);
           CurrentState = CHECK;
           tsDataDirty = true;
 
@@ -220,6 +233,7 @@ void loop() {
     break;
 
     case CHECK:
+    digitalWrite(driver_enable, LOW);
       Serial.println("CHECK");
       Serial.println("SLEEP_ACTIVE");
       delay(5000);
@@ -228,13 +242,15 @@ void loop() {
     break;
 
     case CLOSE:
+    digitalWrite(driver_enable, LOW);
       Serial.println("CLOSE");
       moveBackward(8*512);
       CurrentState = EMPTY_ME;
       tsDataDirty = true;
-
+digitalWrite(driver_enable, LOW);
     break;
     case EMPTY_ME: //releases trash bag strings and returns to load when button is pressed.
+      digitalWrite(driver_enable, LOW);
       Serial.println("EMPTY_ME");
       delay(100);
       if(digitalRead(buttonPin) == HIGH){
@@ -248,12 +264,11 @@ void loop() {
           tsDataDirty = true;
         }
       }
+
     break;
 
     default:
     break;
-
-    delay(50);
   }
 
   tsTick();
