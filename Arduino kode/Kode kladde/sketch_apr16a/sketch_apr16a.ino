@@ -77,6 +77,8 @@ void moveBackward(int x) {
 void wifiConnect() {
   Serial.print("WiFi: ");
   WiFi.mode(WIFI_STA);
+  WiFi.setAutoReconnect(true);  // SDK genopretter forbindelse i baggrunden hvis routeren genstarter
+  WiFi.persistent(true);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   unsigned long start = millis();
   while (WiFi.status() != WL_CONNECTED && millis() - start < 15000) {
@@ -141,10 +143,10 @@ void tsPush() {
   WiFiClient client;
   HTTPClient http;
   String url = String("http://api.thingspeak.com/update?api_key=") + TS_WRITE_KEY
-             + "&field1=" + String(lastDistance, 1)
              + "&field2=" + String(bagsRemaining)
              + "&field3=" + String((int)CurrentState)
              + "&field4=" + String(pendingBagFull ? 1 : 0);
+  if (lastDistance >= 0) url += "&field1=" + String(lastDistance, 1);  // springer over hvis vi ikke har målt endnu
   http.begin(client, url);
   int code = http.GET();
   Serial.print("[TS push] HTTP "); Serial.println(code);
