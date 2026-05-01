@@ -1,8 +1,18 @@
+// Påkrævede libraries (installer via Arduino IDE -> Sketch -> Include Library -> Manage Libraries):
+//   - "Adafruit SSD1306"     af Adafruit
+//   - "Adafruit GFX Library" af Adafruit
+//   - "DHT sensor library"   af Adafruit
+//   (Adafruit BusIO installeres automatisk som dependency af SSD1306)
+
 #include <Arduino.h>
 #include <Stepper.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
 #include <WiFiClient.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+#include <DHT.h>
 extern "C"{
   #include "user_interface.h"
 }
@@ -16,14 +26,26 @@ const uint8_t echoPin = 2;
 const uint8_t trigPin = 0;
 const uint8_t LED_pin = 7; //SD0/MISO
 const uint8_t INT_pin = 9; //external interrupt pin
-const uint8_t driver_enable = 1; 
-//const uint8_t SDA_pin = 4; // D2
-//const uint8_t SCL_pin = 5; // D1 
-// Virkende wiring:
-// D5 -> IN1
-// D7 -> IN2
-// D6 -> IN3
-// D0 -> IN4
+const uint8_t driver_enable = 1;
+// Virkende wiring stepper:
+// D5 (GPIO14) -> IN1
+// D7 (GPIO13) -> IN2
+// D6 (GPIO12) -> IN3
+// D1 (GPIO5)  -> IN4
+
+// OLED SSD1306 (I2C):
+// D2 (GPIO4)  -> SDA
+// D0 (GPIO16) -> SCL
+// DHT11:
+// RX (GPIO3)  -> DATA  (+ 10kΩ pull-up til 3.3V)
+
+#define SCREEN_W   128
+#define SCREEN_H    64
+#define OLED_ADDR 0x3C
+#define SDA_PIN      4   // D2
+#define SCL_PIN     16   // D0
+#define DHT_PIN      3   // RX
+#define DHT_TYPE DHT11
 
 // WiFi (UDFYLD inden upload)
 const char* WIFI_SSID     = "EKB";
@@ -62,6 +84,40 @@ enum State{
 State CurrentState = LOAD;
 
 Stepper myStepper(stepsPerRevolution, 14, 12, 13, 5);
+Adafruit_SSD1306 display(SCREEN_W, SCREEN_H, &Wire, -1);
+DHT dht(DHT_PIN, DHT_TYPE);
+
+float lastTemp = NAN;
+float lastHum  = NAN;
+
+void readDHT() {
+  float t = dht.readTemperature();
+  float h = dht.readHumidity();
+  if (!isnan(t) && !isnan(h)) {
+    lastTemp = t;
+    lastHum  = h;
+    tsDataDirty = true;
+  }
+}
+
+void updateDisplay() {
+  static const char* stateNames[] = {"LOAD", "CHECK", "CLOSE", "EMPTY_ME"};
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+  display.setCursor(0, 0);
+  if (!isnan(lastTemp)) {
+    display.print("Temp: "); display.print(lastTemp, 1); display.println(" C");
+    display.print("Hum:  "); display.print(lastHum,  0); display.println(" %");
+  } else {
+    display.println("Temp: --");
+    display.println("Hum:  --");
+  }
+  display.print("State: "); display.println(stateNames[CurrentState]);
+  display.print("WiFi: ");
+  display.println(WiFi.status() == WL_CONNECTED ? "OK" : "NO");
+  display.display();
+}
 
 void moveForward(int x) {
   digitalWrite(driver_enable, HIGH);
@@ -105,8 +161,16 @@ void setup() {
   pinMode(driver_enable, OUTPUT);
   myStepper.setSpeed(6);
   Serial.begin(9600);
+  Wire.begin(SDA_PIN, SCL_PIN);
+  dht.begin();
+  if (!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR)) {
+    Serial.println("OLED ikke fundet");
+  }
+  display.clearDisplay();
+  display.display();
   wifi_set_sleep_type(LIGHT_SLEEP_T);
   wifiConnect();
+  updateDisplay();
 }
 
 
@@ -149,7 +213,8 @@ analogWrite(LED_pin, pwmValue)
 }
 */
 
-// Pusher Field1=afstand, Field2=poser tilbage, Field3=state, Field4=bag-full event
+// Pusher Field1=afstand, Field2=poser tilbage, Field3=state, Field4=bag-full event,
+//         Field6=temperatur (C), Field7=fugtighed (%)
 void tsPush() {
   WiFiClient client;
   HTTPClient http;
@@ -157,7 +222,11 @@ void tsPush() {
              + "&field2=" + String(bagsRemaining)
              + "&field3=" + String((int)CurrentState)
              + "&field4=" + String(pendingBagFull ? 1 : 0);
-  if (lastDistance >= 0) url += "&field1=" + String(lastDistance, 1);  // springer over hvis vi ikke har målt endnu
+  if (lastDistance >= 0) url += "&field1=" + String(lastDistance, 1);
+  if (!isnan(lastTemp)) {
+    url += "&field6=" + String(lastTemp, 1);
+    url += "&field7=" + String(lastHum,  0);
+  }
   http.begin(client, url);
   int code = http.GET();
   Serial.print("[TS push] HTTP "); Serial.println(code);
@@ -225,6 +294,7 @@ digitalWrite(driver_enable, LOW);
           digitalWrite(driver_enable, LOW);
           CurrentState = CHECK;
           tsDataDirty = true;
+          updateDisplay();
 
         }else{
 
@@ -241,6 +311,8 @@ digitalWrite(driver_enable, LOW);
       delay(5000);
       Serial.println("AWAKE!");
       Ultra_Sense();
+      readDHT();
+      updateDisplay();
     break;
 
     case CLOSE:
@@ -249,7 +321,8 @@ digitalWrite(driver_enable, LOW);
       moveBackward(12*512);
       CurrentState = EMPTY_ME;
       tsDataDirty = true;
-digitalWrite(driver_enable, LOW);
+      digitalWrite(driver_enable, LOW);
+      updateDisplay();
     break;
     case EMPTY_ME: //releases trash bag strings and returns to load when button is pressed.
       digitalWrite(driver_enable, LOW);
@@ -264,6 +337,7 @@ digitalWrite(driver_enable, LOW);
           if (bagsRemaining > 0) bagsRemaining--;
           CurrentState = LOAD;
           tsDataDirty = true;
+          updateDisplay();
         }
       }
 

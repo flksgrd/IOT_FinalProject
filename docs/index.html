@@ -98,6 +98,16 @@
   </div>
 
   <div class="stat">
+    <span class="label">Temperatur</span>
+    <span><span class="value" id="temp">--</span><span class="unit"> °C</span></span>
+  </div>
+
+  <div class="stat">
+    <span class="label">Fugtighed</span>
+    <span><span class="value" id="hum">--</span><span class="unit"> %</span></span>
+  </div>
+
+  <div class="stat">
     <span class="label">Tilstand</span>
     <span class="value" id="state">--</span>
   </div>
@@ -150,6 +160,11 @@
 
         const dist = parseFloat(f.field1);
         document.getElementById('dist').textContent = isNaN(dist) ? '--' : dist.toFixed(1);
+
+        const temp = parseFloat(f.field6);
+        document.getElementById('temp').textContent = isNaN(temp) ? '--' : temp.toFixed(1);
+        const hum = parseFloat(f.field7);
+        document.getElementById('hum').textContent = isNaN(hum) ? '--' : hum.toFixed(0);
 
         const stateIdx = parseInt(f.field3, 10);
         document.getElementById('state').textContent = STATE_NAMES[stateIdx] || '--';
