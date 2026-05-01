@@ -65,7 +65,7 @@ Stepper myStepper(stepsPerRevolution, 14, 12, 13, 5);
 
 void moveForward(int x) {
   digitalWrite(driver_enable, HIGH);
-  for (int stepCount = 0; stepCount < moveDistance; stepCount++) {
+  for (int stepCount = 0; stepCount < x; stepCount++) {
     myStepper.step(1);
     yield();
   }
@@ -221,7 +221,7 @@ digitalWrite(driver_enable, LOW);
           delay(100);
 
         if (digitalRead(buttonPin) == HIGH) {
-          moveBackward(50);
+          moveBackward(2*512);
           digitalWrite(driver_enable, LOW);
           CurrentState = CHECK;
           tsDataDirty = true;
@@ -246,7 +246,7 @@ digitalWrite(driver_enable, LOW);
     case CLOSE:
     digitalWrite(driver_enable, LOW);
       Serial.println("CLOSE");
-      moveBackward(8*512);
+      moveBackward(12*512);
       CurrentState = EMPTY_ME;
       tsDataDirty = true;
 digitalWrite(driver_enable, LOW);
@@ -260,7 +260,7 @@ digitalWrite(driver_enable, LOW);
 
         if (digitalRead(buttonPin) == HIGH) {
           delay(100);
-          moveForward(8*512);
+          moveForward(12*512);
           if (bagsRemaining > 0) bagsRemaining--;
           CurrentState = LOAD;
           tsDataDirty = true;
