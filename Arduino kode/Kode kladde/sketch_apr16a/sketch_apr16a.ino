@@ -1,7 +1,5 @@
 // Påkrævede libraries (installer via Arduino IDE -> Sketch -> Include Library -> Manage Libraries):
-//   - "Adafruit SSD1306"     af Adafruit
-//   - "Adafruit GFX Library" af Adafruit
-//   (Adafruit BusIO installeres automatisk som dependency af SSD1306)
+//   - "U8g2"  af oliver
 
 #include <Arduino.h>
 #include <Stepper.h>
@@ -9,8 +7,7 @@
 #include <ESP8266HTTPClient.h>
 #include <WiFiClient.h>
 #include <Wire.h>
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
+#include <U8g2lib.h>
 extern "C"{
   #include "user_interface.h"
 }
@@ -37,11 +34,8 @@ const uint8_t driver_enable = 1;
 // LM35:
 // A0          -> Vout (10 mV/°C)
 
-#define SCREEN_W   128
-#define SCREEN_H    64
-#define OLED_ADDR 0x3C
 #define SDA_PIN      4   // D2
-#define SCL_PIN      5   // D0
+#define SCL_PIN      5   // D1
 
 // WiFi (UDFYLD inden upload)
 const char* WIFI_SSID     = "EKB";
@@ -80,7 +74,7 @@ enum State{
 State CurrentState = LOAD;
 
 Stepper myStepper(stepsPerRevolution, 14, 12, 13, 16);
-Adafruit_SSD1306 display(SCREEN_W, SCREEN_H, &Wire, -1);
+U8G2_SH1106_128X64_NONAME_F_HW_I2C display(U8G2_R0, U8X8_PIN_NONE);
 
 float lastTemp = NAN;
 
@@ -93,19 +87,19 @@ void readLM35() {
 
 void updateDisplay() {
   static const char* stateNames[] = {"LOAD", "CHECK", "CLOSE", "EMPTY_ME"};
-  display.clearDisplay();
-  display.setTextSize(1);
-  display.setTextColor(SSD1306_WHITE);
-  display.setCursor(0, 0);
-  if (!isnan(lastTemp)) {
-    display.print("Temp: "); display.print(lastTemp, 1); display.println(" C");
-  } else {
-    display.println("Temp: --");
-  }
-  display.print("State: "); display.println(stateNames[CurrentState]);
-  display.print("WiFi: ");
-  display.println(WiFi.status() == WL_CONNECTED ? "OK" : "NO");
-  display.display();
+  char buf[32];
+  display.clearBuffer();
+  display.setFont(u8g2_font_ncenB08_tr);
+  if (!isnan(lastTemp))
+    snprintf(buf, sizeof(buf), "Temp: %.1f C", lastTemp);
+  else
+    strcpy(buf, "Temp: --");
+  display.drawStr(0, 12, buf);
+  snprintf(buf, sizeof(buf), "State: %s", stateNames[CurrentState]);
+  display.drawStr(0, 28, buf);
+  snprintf(buf, sizeof(buf), "WiFi: %s", WiFi.status() == WL_CONNECTED ? "OK" : "NO");
+  display.drawStr(0, 44, buf);
+  display.sendBuffer();
 }
 
 void moveForward(int x) {
@@ -151,11 +145,9 @@ void setup() {
   myStepper.setSpeed(6);
   Serial.begin(9600);
   Wire.begin(SDA_PIN, SCL_PIN);
-  if (!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR)) {
-    Serial.println("OLED ikke fundet");
-  }
-  display.clearDisplay();
-  display.display();
+  display.begin();
+  display.clearBuffer();
+  display.sendBuffer();
   wifi_set_sleep_type(LIGHT_SLEEP_T);
   wifiConnect();
   updateDisplay();
