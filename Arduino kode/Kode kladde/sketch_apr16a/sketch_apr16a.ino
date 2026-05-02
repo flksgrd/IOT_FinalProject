@@ -1,7 +1,6 @@
 // Påkrævede libraries (installer via Arduino IDE -> Sketch -> Include Library -> Manage Libraries):
 //   - "Adafruit SSD1306"     af Adafruit
 //   - "Adafruit GFX Library" af Adafruit
-//   - "DHT sensor library"   af Adafruit
 //   (Adafruit BusIO installeres automatisk som dependency af SSD1306)
 
 #include <Arduino.h>
@@ -12,7 +11,6 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-#include <DHT.h>
 extern "C"{
   #include "user_interface.h"
 }
@@ -36,16 +34,14 @@ const uint8_t driver_enable = 1;
 // OLED SSD1306 (I2C):
 // D2 (GPIO4)  -> SDA
 // D0 (GPIO16) -> SCL
-// DHT11:
-// RX (GPIO3)  -> DATA  (+ 10kΩ pull-up til 3.3V)
+// LM35:
+// A0          -> Vout (10 mV/°C)
 
 #define SCREEN_W   128
 #define SCREEN_H    64
 #define OLED_ADDR 0x3C
 #define SDA_PIN      4   // D2
 #define SCL_PIN     16   // D0
-#define DHT_PIN      3   // RX
-#define DHT_TYPE DHT11
 
 // WiFi (UDFYLD inden upload)
 const char* WIFI_SSID     = "EKB";
@@ -85,19 +81,14 @@ State CurrentState = LOAD;
 
 Stepper myStepper(stepsPerRevolution, 14, 12, 13, 5);
 Adafruit_SSD1306 display(SCREEN_W, SCREEN_H, &Wire, -1);
-DHT dht(DHT_PIN, DHT_TYPE);
 
 float lastTemp = NAN;
-float lastHum  = NAN;
 
-void readDHT() {
-  float t = dht.readTemperature();
-  float h = dht.readHumidity();
-  if (!isnan(t) && !isnan(h)) {
-    lastTemp = t;
-    lastHum  = h;
-    tsDataDirty = true;
-  }
+void readLM35() {
+  // LM35: 10 mV/°C. NodeMCU ADC: 0-3.3V -> 0-1023
+  float voltage = analogRead(A0) * (3.3f / 1023.0f);
+  lastTemp = voltage * 100.0f;
+  tsDataDirty = true;
 }
 
 void updateDisplay() {
@@ -108,10 +99,8 @@ void updateDisplay() {
   display.setCursor(0, 0);
   if (!isnan(lastTemp)) {
     display.print("Temp: "); display.print(lastTemp, 1); display.println(" C");
-    display.print("Hum:  "); display.print(lastHum,  0); display.println(" %");
   } else {
     display.println("Temp: --");
-    display.println("Hum:  --");
   }
   display.print("State: "); display.println(stateNames[CurrentState]);
   display.print("WiFi: ");
@@ -162,7 +151,6 @@ void setup() {
   myStepper.setSpeed(6);
   Serial.begin(9600);
   Wire.begin(SDA_PIN, SCL_PIN);
-  dht.begin();
   if (!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR)) {
     Serial.println("OLED ikke fundet");
   }
@@ -223,10 +211,8 @@ void tsPush() {
              + "&field3=" + String((int)CurrentState)
              + "&field4=" + String(pendingBagFull ? 1 : 0);
   if (lastDistance >= 0) url += "&field1=" + String(lastDistance, 1);
-  if (!isnan(lastTemp)) {
+  if (!isnan(lastTemp))
     url += "&field6=" + String(lastTemp, 1);
-    url += "&field7=" + String(lastHum,  0);
-  }
   http.begin(client, url);
   int code = http.GET();
   Serial.print("[TS push] HTTP "); Serial.println(code);
@@ -311,7 +297,7 @@ digitalWrite(driver_enable, LOW);
       delay(5000);
       Serial.println("AWAKE!");
       Ultra_Sense();
-      readDHT();
+      readLM35();
       updateDisplay();
     break;
 
