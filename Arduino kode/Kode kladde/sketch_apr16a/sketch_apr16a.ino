@@ -6,7 +6,6 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
 #include <WiFiClient.h>
-#include <Wire.h>
 #include <U8g2lib.h>
 extern "C"{
   #include "user_interface.h"
@@ -21,7 +20,6 @@ const uint8_t echoPin = 2; //D4
 const uint8_t trigPin = 0; //D3
 const uint8_t LED_pin = 7; //SD0/MISO
 const uint8_t INT_pin = 9; //external interrupt pin
-const uint8_t driver_enable = 1;
 // Virkende wiring stepper:
 // D5 (GPIO14) -> IN1
 // D7 (GPIO13) -> IN2
@@ -74,7 +72,7 @@ enum State{
 State CurrentState = LOAD;
 
 Stepper myStepper(stepsPerRevolution, 14, 12, 13, 16);
-U8G2_SH1106_128X64_NONAME_F_HW_I2C display(U8G2_R0, U8X8_PIN_NONE);
+U8G2_SH1106_128X64_NONAME_F_SW_I2C display(U8G2_R0, SCL_PIN, SDA_PIN, U8X8_PIN_NONE);
 
 float lastTemp = NAN;
 
@@ -103,22 +101,17 @@ void updateDisplay() {
 }
 
 void moveForward(int x) {
-  digitalWrite(driver_enable, HIGH);
   for (int stepCount = 0; stepCount < x; stepCount++) {
     myStepper.step(1);
     yield();
   }
-digitalWrite(driver_enable, LOW);
 }
 
 void moveBackward(int x) {
-  digitalWrite(driver_enable, HIGH);
   for (int stepCount = 0; stepCount < x; stepCount++) {
     myStepper.step(-1);
     yield();
   }
-digitalWrite(driver_enable, LOW);
-
 }
 
 
@@ -141,10 +134,8 @@ void setup() {
   pinMode(buttonPin, INPUT);
   pinMode(echoPin, INPUT);
   pinMode(trigPin, OUTPUT);
-  pinMode(driver_enable, OUTPUT);
   myStepper.setSpeed(6);
   Serial.begin(9600);
-  Wire.begin(SDA_PIN, SCL_PIN);
   display.begin();
   display.clearBuffer();
   display.sendBuffer();
@@ -257,7 +248,6 @@ void tsTick() {
 }
 
 void loop() {
-digitalWrite(driver_enable, LOW);
   // State machine switch case
   switch(CurrentState){
 
@@ -269,7 +259,6 @@ digitalWrite(driver_enable, LOW);
 
         if (digitalRead(buttonPin) == HIGH) {
           moveBackward(2*512);
-          digitalWrite(driver_enable, LOW);
           CurrentState = CHECK;
           tsDataDirty = true;
           updateDisplay();
@@ -283,7 +272,6 @@ digitalWrite(driver_enable, LOW);
     break;
 
     case CHECK:
-    digitalWrite(driver_enable, LOW);
       Serial.println("CHECK");
       Serial.println("SLEEP_ACTIVE");
       delay(5000);
@@ -294,16 +282,13 @@ digitalWrite(driver_enable, LOW);
     break;
 
     case CLOSE:
-    digitalWrite(driver_enable, LOW);
       Serial.println("CLOSE");
       moveBackward(12*512);
       CurrentState = EMPTY_ME;
       tsDataDirty = true;
-      digitalWrite(driver_enable, LOW);
       updateDisplay();
     break;
     case EMPTY_ME: //releases trash bag strings and returns to load when button is pressed.
-      digitalWrite(driver_enable, LOW);
       Serial.println("EMPTY_ME");
       delay(100);
       if(digitalRead(buttonPin) == HIGH){
