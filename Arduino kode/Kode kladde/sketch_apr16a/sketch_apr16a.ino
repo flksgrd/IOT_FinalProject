@@ -20,8 +20,8 @@ const uint16_t stepsPerRevolution = 2048; //16 bits to be able to hold 2048 in b
 const uint16_t moveDistance = 512; //16 bits to be able to hold 512 in binary
 const uint8_t buttonPin = 15; // D8
 volatile uint8_t CloseBin = 0; // volatile to make sure the variable value is not optimized out of memory
-const uint8_t echoPin = 2;
-const uint8_t trigPin = 0;
+const uint8_t echoPin = 2; //D4
+const uint8_t trigPin = 0; //D3
 const uint8_t LED_pin = 7; //SD0/MISO
 const uint8_t INT_pin = 9; //external interrupt pin
 const uint8_t driver_enable = 1;
@@ -29,11 +29,11 @@ const uint8_t driver_enable = 1;
 // D5 (GPIO14) -> IN1
 // D7 (GPIO13) -> IN2
 // D6 (GPIO12) -> IN3
-// D1 (GPIO5)  -> IN4
+// D0 (GPIO16)  -> IN4
 
 // OLED SSD1306 (I2C):
 // D2 (GPIO4)  -> SDA
-// D0 (GPIO16) -> SCL
+// D1 (GPIO5) -> SCL
 // LM35:
 // A0          -> Vout (10 mV/°C)
 
@@ -41,7 +41,7 @@ const uint8_t driver_enable = 1;
 #define SCREEN_H    64
 #define OLED_ADDR 0x3C
 #define SDA_PIN      4   // D2
-#define SCL_PIN     16   // D0
+#define SCL_PIN      5   // D0
 
 // WiFi (UDFYLD inden upload)
 const char* WIFI_SSID     = "EKB";
@@ -79,7 +79,7 @@ enum State{
 
 State CurrentState = LOAD;
 
-Stepper myStepper(stepsPerRevolution, 14, 12, 13, 5);
+Stepper myStepper(stepsPerRevolution, 14, 12, 13, 16);
 Adafruit_SSD1306 display(SCREEN_W, SCREEN_H, &Wire, -1);
 
 float lastTemp = NAN;
