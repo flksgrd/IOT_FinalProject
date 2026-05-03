@@ -511,6 +511,7 @@
     const WRITE_KEY = 'DAFOBTGX2VWN91LU';
     const LOW_THRESHOLD = 3;
     const REFRESH_MS = 5000;
+    const STALE_MS = 90 * 1000;
     const BIN_DEPTH_CM = 30;
     const BAG_ICON_COUNT = 10;
 
@@ -579,7 +580,7 @@
         const f = (j.feeds || [])[0];
         if (!f) {
           document.getElementById('lastUpdate').textContent = 'No data yet';
-          setStatus(true);
+          setStatus(false);
           return;
         }
 
@@ -603,7 +604,8 @@
 
         const ts = new Date(f.created_at);
         document.getElementById('lastUpdate').textContent = `Last updated: ${ts.toLocaleTimeString('en-GB')}`;
-        setStatus(true);
+        const age = Date.now() - ts.getTime();
+        setStatus(!isNaN(age) && age <= STALE_MS);
       } catch (e) {
         document.getElementById('lastUpdate').textContent = 'Could not reach ThingSpeak';
         setStatus(false);
