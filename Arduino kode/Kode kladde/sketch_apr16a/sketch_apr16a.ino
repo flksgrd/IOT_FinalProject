@@ -7,19 +7,13 @@
 #include <ESP8266HTTPClient.h>
 #include <WiFiClient.h>
 #include <U8g2lib.h>
-extern "C"{
-  #include "user_interface.h"
-}
 
 // der skal sikres at stepperen kan køre begge veje når nu steps per revolution er uint
 const uint16_t stepsPerRevolution = 2048; //16 bits to be able to hold 2048 in binary
 const uint16_t moveDistance = 512; //16 bits to be able to hold 512 in binary
 const uint8_t buttonPin = 15; // D8
-volatile uint8_t CloseBin = 0; // volatile to make sure the variable value is not optimized out of memory
-const uint8_t echoPin = 2; //D4
+const uint8_t echoPin = 2; //D4 (10k pull-up til 3.3V — boot-pin)
 const uint8_t trigPin = 0; //D3
-const uint8_t LED_pin = 7; //SD0/MISO
-const uint8_t INT_pin = 9; //external interrupt pin
 // Virkende wiring stepper:
 // D5 (GPIO14) -> IN1
 // D7 (GPIO13) -> IN2
@@ -77,9 +71,14 @@ U8G2_SH1106_128X64_NONAME_F_SW_I2C display(U8G2_R0, SCL_PIN, SDA_PIN, U8X8_PIN_N
 float lastTemp = NAN;
 
 void readLM35() {
-  // LM35: 10 mV/°C. NodeMCU ADC: 0-3.3V -> 0-1023
-  float voltage = analogRead(A0) * (3.3f / 1023.0f);
-  lastTemp = voltage * 100.0f;
+  int raw = analogRead(A0);
+  // LM35: 10 mV/°C. Juster 3.3f til faktisk ADC-reference for dit board.
+  // Kalibrering: mål rigtig temperatur T_ref, sæt multiplier = T_ref / (raw * 100 / 1023)
+  // T_ref = 24,5 - raw = 112
+  // 24,5 / (112 * 100 * 1023) = 2,2378125
+  lastTemp = raw * (2.24f / 1023.0f) * 100.0f;
+  Serial.print("[LM35] raw="); Serial.print(raw);
+  Serial.print("  temp="); Serial.println(lastTemp, 1);
   tsDataDirty = true;
 }
 
@@ -131,15 +130,20 @@ void wifiConnect() {
 }
 
 void setup() {
+  Serial.begin(115200);
+  delay(100);
+  Serial.println("\n=== BOOT ===");
+
   pinMode(buttonPin, INPUT);
   pinMode(echoPin, INPUT);
   pinMode(trigPin, OUTPUT);
-  myStepper.setSpeed(6);
-  Serial.begin(9600);
+  digitalWrite(trigPin, LOW);
+  myStepper.setSpeed(15);
+
   display.begin();
   display.clearBuffer();
   display.sendBuffer();
-  wifi_set_sleep_type(LIGHT_SLEEP_T);
+
   wifiConnect();
   updateDisplay();
 }
@@ -154,6 +158,7 @@ void Ultra_Sense(){
   digitalWrite(trigPin, LOW);
 
   long duration = pulseIn(echoPin, HIGH, 12000);
+  if (duration == 0) { delay(20); return; } // No echo (lid is open, sensor is movec, etv.)
   float distance = duration * 0.034 / 2.0;
   Serial.print(distance);
   lastDistance = distance;
@@ -252,8 +257,8 @@ void loop() {
   switch(CurrentState){
 
     case LOAD:
-    
-      Serial.println("LOAD");
+      delay(500);
+      readLM35();
       if (digitalRead(buttonPin) == HIGH) {
           delay(100);
 
@@ -272,24 +277,21 @@ void loop() {
     break;
 
     case CHECK:
-      Serial.println("CHECK");
-      Serial.println("SLEEP_ACTIVE");
       delay(5000);
-      Serial.println("AWAKE!");
       Ultra_Sense();
       readLM35();
       updateDisplay();
     break;
 
     case CLOSE:
-      Serial.println("CLOSE");
+      Serial.println("-> CLOSE");
       moveBackward(12*512);
       CurrentState = EMPTY_ME;
       tsDataDirty = true;
       updateDisplay();
     break;
     case EMPTY_ME: //releases trash bag strings and returns to load when button is pressed.
-      Serial.println("EMPTY_ME");
+      Serial.println("-> EMPTY_ME");
       delay(100);
       if(digitalRead(buttonPin) == HIGH){
         delay(100);
