@@ -574,10 +574,13 @@
 
     async function refresh() {
       try {
-        const url = `https://api.thingspeak.com/channels/${CHANNEL}/feeds.json?api_key=${READ_KEY}&results=1`;
+        const url = `https://api.thingspeak.com/channels/${CHANNEL}/feeds.json?api_key=${READ_KEY}&results=10`;
         const r = await fetch(url, { cache: 'no-store' });
         const j = await r.json();
-        const f = (j.feeds || [])[0];
+        const feeds = j.feeds || [];
+        // Dashboard writes (field5 only) leave field1/2/3 null. Find the most
+        // recent entry that actually contains ESP sensor data.
+        const f = feeds.slice().reverse().find(x => x && x.field1 != null);
         if (!f) {
           document.getElementById('lastUpdate').textContent = 'No data yet';
           setStatus(false);
