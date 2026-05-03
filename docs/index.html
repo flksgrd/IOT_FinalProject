@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="da">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -415,7 +415,7 @@
   </header>
 
   <section class="card bin-card" id="binCard">
-    <div class="card-label">Afstand</div>
+    <div class="card-label">Distance</div>
     <div class="bin-wrap">
       <svg class="bin-svg" viewBox="0 0 120 170" aria-hidden="true">
         <defs>
@@ -454,10 +454,10 @@
   </section>
 
   <section class="card bags-card" id="bagsStat">
-    <div class="card-label">Poser tilbage</div>
+    <div class="card-label">Bags remaining</div>
     <div class="bags-readout">
       <span class="bags-num" id="bags">--</span>
-      <span class="bags-low-chip">LAV</span>
+      <span class="bags-low-chip">LOW</span>
     </div>
     <div class="bag-icons-wrap">
       <div class="bag-icons" id="bagIcons" aria-hidden="true"></div>
@@ -466,7 +466,7 @@
   </section>
 
   <section class="card">
-    <div class="card-label">Tilstand</div>
+    <div class="card-label">State</div>
     <div class="states-viz" id="statesViz">
       <div class="states-track"></div>
       <div class="states-row">
@@ -492,15 +492,15 @@
   </section>
 
   <section class="card form-card">
-    <label class="card-label" for="newBags">Sæt antal poser</label>
+    <label class="card-label" for="newBags">Set bag count</label>
     <div class="form-row">
-      <input type="number" id="newBags" min="0" max="999" placeholder="f.eks. 15" inputmode="numeric">
-      <button id="setBtn">Gem</button>
+      <input type="number" id="newBags" min="0" max="999" placeholder="e.g. 15" inputmode="numeric">
+      <button id="setBtn">Save</button>
     </div>
   </section>
 
   <footer class="footer">
-    <span id="lastUpdate">Henter…</span>
+    <span id="lastUpdate">Loading…</span>
   </footer>
 
   <div class="toast" id="toast"></div>
@@ -578,7 +578,7 @@
         const j = await r.json();
         const f = (j.feeds || [])[0];
         if (!f) {
-          document.getElementById('lastUpdate').textContent = 'Ingen data endnu';
+          document.getElementById('lastUpdate').textContent = 'No data yet';
           setStatus(true);
           return;
         }
@@ -602,10 +602,10 @@
         }
 
         const ts = new Date(f.created_at);
-        document.getElementById('lastUpdate').textContent = `Sidst opdateret: ${ts.toLocaleTimeString('da-DK')}`;
+        document.getElementById('lastUpdate').textContent = `Last updated: ${ts.toLocaleTimeString('en-GB')}`;
         setStatus(true);
       } catch (e) {
-        document.getElementById('lastUpdate').textContent = 'Kunne ikke kontakte ThingSpeak';
+        document.getElementById('lastUpdate').textContent = 'Could not reach ThingSpeak';
         setStatus(false);
       }
     }
@@ -614,26 +614,26 @@
       const inp = document.getElementById('newBags');
       const btn = document.getElementById('setBtn');
       const n = parseInt(inp.value, 10);
-      if (isNaN(n) || n < 0) { showToast('Ugyldigt tal', true); return; }
+      if (isNaN(n) || n < 0) { showToast('Invalid number', true); return; }
 
       btn.disabled = true;
-      btn.textContent = 'Sender…';
+      btn.textContent = 'Sending…';
       try {
         const url = `https://api.thingspeak.com/update?api_key=${WRITE_KEY}&field5=${n}`;
         const r = await fetch(url);
         const txt = (await r.text()).trim();
         if (txt === '0') {
-          showToast('ThingSpeak afviste – vent 15s og prøv igen', true);
+          showToast('ThingSpeak rejected – wait 15s and try again', true);
         } else {
-          showToast(`Sat til ${n} poser – ESP henter om <30s`);
+          showToast(`Set to ${n} bags – ESP fetches in <30s`);
           inp.value = '';
           setTimeout(refresh, 35000);
         }
       } catch (e) {
-        showToast('Netværksfejl', true);
+        showToast('Network error', true);
       } finally {
         btn.disabled = false;
-        btn.textContent = 'Gem';
+        btn.textContent = 'Save';
       }
     }
 
