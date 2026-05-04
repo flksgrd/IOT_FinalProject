@@ -90,7 +90,6 @@ void readLM35() {
 
 }
 
-
   Temp = raw * (2.24f / 1023.0f) * 100.0f;  
 
   avgTemp = Temp/Readings; 
@@ -130,6 +129,10 @@ void moveForward(int x) {
     myStepper.step(1);
     yield();
   }
+  digitalWrite(14, LOW);
+  digitalWrite(12, LOW);
+  digitalWrite(13, LOW);
+  digitalWrite(16, LOW);
 }
 
 void moveBackward(int x) {
@@ -137,6 +140,10 @@ void moveBackward(int x) {
     myStepper.step(-1);
     yield();
   }
+  digitalWrite(14, LOW);
+  digitalWrite(12, LOW);
+  digitalWrite(13, LOW);
+  digitalWrite(16, LOW);
 }
 
 
@@ -191,7 +198,7 @@ void Ultra_Sense(){
   tsDataDirty = true;
   // *This if statement should trigger after a set amount of time ex 1min dosen't trigger imitietly
   // Trigger state switch when trash is 10cm or closer to being complately full.
-  if (distance <= 10){
+  if (distance <= 8){
 
     if (CurrentState != CLOSE) pendingBagFull = true;
     CurrentState = CLOSE;
@@ -307,6 +314,13 @@ void loop() {
       Ultra_Sense();
       readLM35();
       updateDisplay();
+
+
+      char pbuf[32];
+      snprintf(pbuf, sizeof(pbuf), "%.0f%% Full", constrain(100.0f * (28.0f - lastDistance) / 28.0f, 0.0f, 100.0f));
+      display.drawStr(55, 55, pbuf);
+      display.sendBuffer();
+
     break;
 
     case CLOSE:
