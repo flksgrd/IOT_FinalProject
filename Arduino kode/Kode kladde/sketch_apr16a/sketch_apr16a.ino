@@ -1,29 +1,33 @@
+// Påkrævede libraries (installer via Arduino IDE -> Sketch -> Include Library -> Manage Libraries):
+//   - "U8g2"  af oliver
+
 #include <Arduino.h>
 #include <Stepper.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
 #include <WiFiClient.h>
-extern "C"{
-  #include "user_interface.h"
-}
+#include <U8g2lib.h>
 
 // der skal sikres at stepperen kan køre begge veje når nu steps per revolution er uint
 const uint16_t stepsPerRevolution = 2048; //16 bits to be able to hold 2048 in binary
 const uint16_t moveDistance = 512; //16 bits to be able to hold 512 in binary
 const uint8_t buttonPin = 15; // D8
-volatile uint8_t CloseBin = 0; // volatile to make sure the variable value is not optimized out of memory
-const uint8_t echoPin = 2;
-const uint8_t trigPin = 0;
-const uint8_t LED_pin = 7; //SD0/MISO
-const uint8_t INT_pin = 9; //external interrupt pin
-const uint8_t driver_enable = 1; 
-//const uint8_t SDA_pin = 4; // D2
-//const uint8_t SCL_pin = 5; // D1 
-// Virkende wiring:
-// D5 -> IN1
-// D7 -> IN2
-// D6 -> IN3
-// D0 -> IN4
+const uint8_t echoPin = 2; //D4 (10k pull-up til 3.3V — boot-pin)
+const uint8_t trigPin = 0; //D3
+// Virkende wiring stepper:
+// D5 (GPIO14) -> IN1
+// D7 (GPIO13) -> IN2
+// D6 (GPIO12) -> IN3
+// D0 (GPIO16)  -> IN4
+
+// OLED SSD1306 (I2C):
+// D2 (GPIO4)  -> SDA
+// D1 (GPIO5) -> SCL
+// LM35:
+// A0          -> Vout (10 mV/°C)
+
+#define SDA_PIN      4   // D2
+#define SCL_PIN      5   // D1
 
 // WiFi (UDFYLD inden upload)
 const char* WIFI_SSID     = "EKB";
@@ -61,25 +65,52 @@ enum State{
 
 State CurrentState = LOAD;
 
-Stepper myStepper(stepsPerRevolution, 14, 12, 13, 5);
+Stepper myStepper(stepsPerRevolution, 14, 12, 13, 16);
+U8G2_SH1106_128X64_NONAME_F_SW_I2C display(U8G2_R0, SCL_PIN, SDA_PIN, U8X8_PIN_NONE);
+
+float lastTemp = NAN;
+
+void readLM35() {
+  int raw = analogRead(A0);
+  // LM35: 10 mV/°C. Juster 3.3f til faktisk ADC-reference for dit board.
+  // Kalibrering: mål rigtig temperatur T_ref, sæt multiplier = T_ref / (raw * 100 / 1023)
+  // T_ref = 24,5 - raw = 112
+  // 24,5 / (112 * 100 * 1023) = 2,2378125
+  lastTemp = raw * (2.24f / 1023.0f) * 100.0f;
+  Serial.print("[LM35] raw="); Serial.print(raw);
+  Serial.print("  temp="); Serial.println(lastTemp, 1);
+  tsDataDirty = true;
+}
+
+void updateDisplay() {
+  static const char* stateNames[] = {"LOAD", "CHECK", "CLOSE", "EMPTY_ME"};
+  char buf[32];
+  display.clearBuffer();
+  display.setFont(u8g2_font_ncenB08_tr);
+  if (!isnan(lastTemp))
+    snprintf(buf, sizeof(buf), "Temp: %.1f C", lastTemp);
+  else
+    strcpy(buf, "Temp: --");
+  display.drawStr(0, 12, buf);
+  snprintf(buf, sizeof(buf), "State: %s", stateNames[CurrentState]);
+  display.drawStr(0, 28, buf);
+  snprintf(buf, sizeof(buf), "WiFi: %s", WiFi.status() == WL_CONNECTED ? "OK" : "NO");
+  display.drawStr(0, 44, buf);
+  display.sendBuffer();
+}
 
 void moveForward(int x) {
-  digitalWrite(driver_enable, HIGH);
   for (int stepCount = 0; stepCount < x; stepCount++) {
     myStepper.step(1);
     yield();
   }
-digitalWrite(driver_enable, LOW);
 }
 
 void moveBackward(int x) {
-  digitalWrite(driver_enable, HIGH);
   for (int stepCount = 0; stepCount < x; stepCount++) {
     myStepper.step(-1);
     yield();
   }
-digitalWrite(driver_enable, LOW);
-
 }
 
 
@@ -99,14 +130,22 @@ void wifiConnect() {
 }
 
 void setup() {
+  Serial.begin(115200);
+  delay(100);
+  Serial.println("\n=== BOOT ===");
+
   pinMode(buttonPin, INPUT);
   pinMode(echoPin, INPUT);
   pinMode(trigPin, OUTPUT);
-  pinMode(driver_enable, OUTPUT);
-  myStepper.setSpeed(6);
-  Serial.begin(9600);
-  wifi_set_sleep_type(LIGHT_SLEEP_T);
+  digitalWrite(trigPin, LOW);
+  myStepper.setSpeed(15);
+
+  display.begin();
+  display.clearBuffer();
+  display.sendBuffer();
+
   wifiConnect();
+  updateDisplay();
 }
 
 
@@ -119,6 +158,7 @@ void Ultra_Sense(){
   digitalWrite(trigPin, LOW);
 
   long duration = pulseIn(echoPin, HIGH, 12000);
+  if (duration == 0) { delay(20); return; } // No echo (lid is open, sensor is movec, etv.)
   float distance = duration * 0.034 / 2.0;
   Serial.print(distance);
   lastDistance = distance;
@@ -149,7 +189,8 @@ analogWrite(LED_pin, pwmValue)
 }
 */
 
-// Pusher Field1=afstand, Field2=poser tilbage, Field3=state, Field4=bag-full event
+// Pusher Field1=afstand, Field2=poser tilbage, Field3=state, Field4=bag-full event,
+//         Field6=temperatur (C), Field7=fugtighed (%)
 void tsPush() {
   WiFiClient client;
   HTTPClient http;
@@ -157,7 +198,9 @@ void tsPush() {
              + "&field2=" + String(bagsRemaining)
              + "&field3=" + String((int)CurrentState)
              + "&field4=" + String(pendingBagFull ? 1 : 0);
-  if (lastDistance >= 0) url += "&field1=" + String(lastDistance, 1);  // springer over hvis vi ikke har målt endnu
+  if (lastDistance >= 0) url += "&field1=" + String(lastDistance, 1);
+  if (!isnan(lastTemp))
+    url += "&field6=" + String(lastTemp, 1);
   http.begin(client, url);
   int code = http.GET();
   Serial.print("[TS push] HTTP "); Serial.println(code);
@@ -210,21 +253,20 @@ void tsTick() {
 }
 
 void loop() {
-digitalWrite(driver_enable, LOW);
   // State machine switch case
   switch(CurrentState){
 
     case LOAD:
-    
-      Serial.println("LOAD");
+      delay(500);
+      readLM35();
       if (digitalRead(buttonPin) == HIGH) {
           delay(100);
 
         if (digitalRead(buttonPin) == HIGH) {
           moveBackward(2*512);
-          digitalWrite(driver_enable, LOW);
           CurrentState = CHECK;
           tsDataDirty = true;
+          updateDisplay();
 
         }else{
 
@@ -235,25 +277,21 @@ digitalWrite(driver_enable, LOW);
     break;
 
     case CHECK:
-    digitalWrite(driver_enable, LOW);
-      Serial.println("CHECK");
-      Serial.println("SLEEP_ACTIVE");
       delay(5000);
-      Serial.println("AWAKE!");
       Ultra_Sense();
+      readLM35();
+      updateDisplay();
     break;
 
     case CLOSE:
-    digitalWrite(driver_enable, LOW);
-      Serial.println("CLOSE");
+      Serial.println("-> CLOSE");
       moveBackward(12*512);
       CurrentState = EMPTY_ME;
       tsDataDirty = true;
-digitalWrite(driver_enable, LOW);
+      updateDisplay();
     break;
     case EMPTY_ME: //releases trash bag strings and returns to load when button is pressed.
-      digitalWrite(driver_enable, LOW);
-      Serial.println("EMPTY_ME");
+      Serial.println("-> EMPTY_ME");
       delay(100);
       if(digitalRead(buttonPin) == HIGH){
         delay(100);
@@ -264,6 +302,7 @@ digitalWrite(driver_enable, LOW);
           if (bagsRemaining > 0) bagsRemaining--;
           CurrentState = LOAD;
           tsDataDirty = true;
+          updateDisplay();
         }
       }
 

@@ -596,6 +596,11 @@
         document.getElementById('dist').textContent = isNaN(dist) ? '--' : dist.toFixed(1);
         renderFill(isNaN(dist) ? null : dist);
 
+        const temp = parseFloat(f.field6);
+        document.getElementById('temp').textContent = isNaN(temp) ? '--' : temp.toFixed(1);
+        const hum = parseFloat(f.field7);
+        document.getElementById('hum').textContent = isNaN(hum) ? '--' : hum.toFixed(0);
+
         const stateIdx = parseInt(f.field3, 10);
         document.getElementById('state').textContent = STATE_NAMES[stateIdx] || '--';
         const sv = document.getElementById('statesViz');
