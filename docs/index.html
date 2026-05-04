@@ -298,6 +298,56 @@
       border: 0;
     }
 
+    /* --- Temperature card ------------------------------------------ */
+    .temp-wrap {
+      display: flex;
+      align-items: center;
+      gap: 1.4rem;
+      padding: 0.4rem 0 0.2rem;
+    }
+    .temp-svg {
+      width: 56px;
+      height: auto;
+      flex-shrink: 0;
+    }
+    .temp-readout {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      min-width: 0;
+    }
+    .temp-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 3rem;
+      line-height: 0.95;
+      color: var(--ink);
+      letter-spacing: -0.04em;
+      font-variant-numeric: tabular-nums;
+    }
+    .temp-unit {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--ink);
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      margin-top: 0.4rem;
+      padding: 0.15rem 0.5rem;
+      background: var(--accent);
+      border: 2px solid var(--ink);
+    }
+    .temp-fluid {
+      fill: var(--accent);
+      transition: fill 0.3s;
+    }
+    #tempMercury { transition: y 0.4s ease, height 0.4s ease; }
+    .temp-card.hot .temp-fluid { fill: var(--alert); }
+    .temp-card.hot .temp-unit {
+      background: var(--alert);
+      color: var(--paper-2);
+    }
+
     /* --- Form ------------------------------------------------------- */
     .form-row { display: flex; gap: 0.6rem; }
     input[type="number"] {
@@ -401,7 +451,9 @@
       h1 { font-size: 1.15rem; }
       .bin-num { font-size: 2.6rem; }
       .bags-num { font-size: 2.5rem; }
+      .temp-num { font-size: 2.5rem; }
       .bin-svg { width: 110px; }
+      .temp-svg { width: 48px; }
       .bag-icon { width: 19px; height: 23px; }
       .state-name { font-size: 0.55rem; }
     }
@@ -465,6 +517,44 @@
     </div>
   </section>
 
+  <section class="card temp-card" id="tempCard">
+    <div class="card-label">Temperature</div>
+    <div class="temp-wrap">
+      <svg class="temp-svg" viewBox="0 0 60 170" aria-hidden="true">
+        <defs>
+          <clipPath id="tempInside">
+            <rect x="22" y="22" width="16" height="108" rx="8"/>
+          </clipPath>
+        </defs>
+        <!-- tube interior -->
+        <rect x="22" y="22" width="16" height="108" rx="8" fill="#ffffff"/>
+        <!-- bulb fill (overlaps tube bottom for visual continuity) -->
+        <circle class="temp-fluid" cx="30" cy="142" r="18"/>
+        <!-- mercury fill, clipped to tube -->
+        <g clip-path="url(#tempInside)">
+          <rect class="temp-fluid" id="tempMercury" x="22" y="130" width="16" height="0"/>
+        </g>
+        <!-- tube outline -->
+        <rect x="22" y="22" width="16" height="108" rx="8" fill="none" stroke="#0a0a0a" stroke-width="3"/>
+        <!-- bulb outline -->
+        <circle cx="30" cy="142" r="18" fill="none" stroke="#0a0a0a" stroke-width="3"/>
+        <!-- tick marks: 50 / 40 / 30 / 20 / 10 / 0 °C -->
+        <g stroke="#0a0a0a" stroke-width="1.5" opacity="0.55" stroke-linecap="round">
+          <line x1="40" y1="30"  x2="48" y2="30"/>
+          <line x1="40" y1="50"  x2="46" y2="50"/>
+          <line x1="40" y1="70"  x2="48" y2="70"/>
+          <line x1="40" y1="90"  x2="46" y2="90"/>
+          <line x1="40" y1="110" x2="48" y2="110"/>
+          <line x1="40" y1="130" x2="46" y2="130"/>
+        </g>
+      </svg>
+      <div class="temp-readout">
+        <div class="temp-num"><span id="temp">--</span></div>
+        <div class="temp-unit">°C</div>
+      </div>
+    </div>
+  </section>
+
   <section class="card">
     <div class="card-label">State</div>
     <div class="states-viz" id="statesViz">
@@ -514,6 +604,8 @@
     const STALE_MS = 90 * 1000;
     const BIN_DEPTH_CM = 30;
     const BAG_ICON_COUNT = 10;
+    const TEMP_MAX_C = 50;   // top of thermometer scale
+    const TEMP_HOT_C = 30;   // °C threshold that flips the card to hot styling
 
     const STATE_NAMES = ['LOAD', 'CHECK', 'CLOSE', 'EMPTY_ME'];
 
@@ -553,6 +645,22 @@
       } else {
         overflow.style.display = 'none';
       }
+    }
+
+    function renderTemp(temp) {
+      const merc = document.getElementById('tempMercury');
+      const card = document.getElementById('tempCard');
+      let pct = 0;
+      if (temp != null && !isNaN(temp)) {
+        pct = Math.max(0, Math.min(100, temp / TEMP_MAX_C * 100));
+      }
+      // Tube interior runs from y=22 to y=130 (height 108)
+      const innerTop = 22, innerBottom = 130;
+      const innerH = innerBottom - innerTop;
+      const h = innerH * pct / 100;
+      merc.setAttribute('y', innerBottom - h);
+      merc.setAttribute('height', h);
+      card.classList.toggle('hot', temp != null && !isNaN(temp) && temp >= TEMP_HOT_C);
     }
 
     function renderFill(dist) {
@@ -598,8 +706,7 @@
 
         const temp = parseFloat(f.field6);
         document.getElementById('temp').textContent = isNaN(temp) ? '--' : temp.toFixed(1);
-        const hum = parseFloat(f.field7);
-        document.getElementById('hum').textContent = isNaN(hum) ? '--' : hum.toFixed(0);
+        renderTemp(isNaN(temp) ? null : temp);
 
         const stateIdx = parseInt(f.field3, 10);
         document.getElementById('state').textContent = STATE_NAMES[stateIdx] || '--';
