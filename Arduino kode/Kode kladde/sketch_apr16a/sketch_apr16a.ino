@@ -101,8 +101,6 @@ void readLM35() {
   i = 0; 
 
   Serial.print("[LM35] raw="); Serial.print(raw);
-  Serial.print("[LM35] Temp="); Serial.print(Temp);
-  Serial.print("[LM35] Old="); Serial.print(OldTemp);
   Serial.print("  temp="); Serial.println(avgTemp, 1);
   tsDataDirty = true;
 }
