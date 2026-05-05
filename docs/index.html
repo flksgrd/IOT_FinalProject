@@ -298,6 +298,39 @@
       border: 0;
     }
 
+    /* --- Temperature card (slim) ----------------------------------- */
+    .temp-card { padding: 0.7rem 1rem; }
+    .temp-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    .temp-card .card-label { margin-bottom: 0; }
+    .temp-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 1.5rem;
+      line-height: 1;
+      color: var(--ink);
+      letter-spacing: -0.02em;
+      font-variant-numeric: tabular-nums;
+      display: inline-flex;
+      align-items: baseline;
+      gap: 0.15rem;
+      transition: color 0.25s;
+    }
+    .temp-deg {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      font-size: 0.8rem;
+      letter-spacing: 0.1em;
+      color: var(--mute);
+      text-transform: uppercase;
+    }
+    .temp-card.hot .temp-value { color: var(--alert); }
+    .temp-card.hot .temp-deg   { color: var(--alert); }
+
     /* --- Form ------------------------------------------------------- */
     .form-row { display: flex; gap: 0.6rem; }
     input[type="number"] {
@@ -401,6 +434,7 @@
       h1 { font-size: 1.15rem; }
       .bin-num { font-size: 2.6rem; }
       .bags-num { font-size: 2.5rem; }
+      .temp-value { font-size: 1.3rem; }
       .bin-svg { width: 110px; }
       .bag-icon { width: 19px; height: 23px; }
       .state-name { font-size: 0.55rem; }
@@ -465,6 +499,13 @@
     </div>
   </section>
 
+  <section class="card temp-card" id="tempCard">
+    <div class="temp-row">
+      <div class="card-label">Temperature</div>
+      <div class="temp-value"><span id="temp">--</span><span class="temp-deg">°C</span></div>
+    </div>
+  </section>
+
   <section class="card">
     <div class="card-label">State</div>
     <div class="states-viz" id="statesViz">
@@ -514,6 +555,7 @@
     const STALE_MS = 90 * 1000;
     const BIN_DEPTH_CM = 30;
     const BAG_ICON_COUNT = 10;
+    const TEMP_HOT_C = 30;   // °C threshold that flips the temp card to alert styling
 
     const STATE_NAMES = ['LOAD', 'CHECK', 'CLOSE', 'EMPTY_ME'];
 
@@ -553,6 +595,11 @@
       } else {
         overflow.style.display = 'none';
       }
+    }
+
+    function renderTemp(temp) {
+      const card = document.getElementById('tempCard');
+      card.classList.toggle('hot', temp != null && !isNaN(temp) && temp >= TEMP_HOT_C);
     }
 
     function renderFill(dist) {
@@ -598,8 +645,7 @@
 
         const temp = parseFloat(f.field6);
         document.getElementById('temp').textContent = isNaN(temp) ? '--' : temp.toFixed(1);
-        const hum = parseFloat(f.field7);
-        document.getElementById('hum').textContent = isNaN(hum) ? '--' : hum.toFixed(0);
+        renderTemp(isNaN(temp) ? null : temp);
 
         const stateIdx = parseInt(f.field3, 10);
         document.getElementById('state').textContent = STATE_NAMES[stateIdx] || '--';
