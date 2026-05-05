@@ -70,34 +70,33 @@ State CurrentState = LOAD;
 Stepper myStepper(stepsPerRevolution, 14, 12, 13, 16);
 U8G2_SH1106_128X64_NONAME_F_SW_I2C display(U8G2_R0, SCL_PIN, SDA_PIN, U8X8_PIN_NONE);
 
-float Temp = 0;
 float avgTemp = 0;
 float OldTemp = 0;
 static uint8_t i = 0; 
-const uint8_t Readings = 10; 
-uint16_t raw = 0; 
+const uint8_t Readings = 10;
 void readLM35() {
-  Temp = 0;
-  raw = 0; 
+  float Temp = 0;
+  uint16_t raw = 0; 
 
   // LM35: 10 mV/°C. Juster 3.3f til faktisk ADC-reference for dit board.
-  // Kalibrering: mål rigtig temperatur T_ref, sæt multiplier = T_ref / (raw * 100 / 1023)
-  // T_ref = 24,5 - raw = 112
-  // 24,5 / (112 * 100 * 1023) = 2,2378125
+
   for(i = 0; i < Readings; i++){
-  raw += analogRead(A0);
-  delay(10);
+    raw += analogRead(A0);
+    delay(10);
 
 }
 
-  Temp = raw * (2.24f / 1023.0f) * 100.0f;  
+  float avgRaw = (float)raw / Readings;
+  
+  Temp = avgRaw * (2.667f / 1023.0f) * 100.0f;   
 
-  avgTemp = Temp/Readings; 
+  if (OldTemp == 0) {
+      OldTemp = Temp; 
+  }
 
-  avgTemp = ((3*avgTemp + 7*OldTemp)/10.0f); //IIR Filter 
+  avgTemp = ((3.0f * Temp + 7.0f * OldTemp) / 10.0f); //IIR Filter 
 
-  OldTemp = avgTemp; 
-  i = 0; 
+  OldTemp = avgTemp;
 
   Serial.print("[LM35] raw="); Serial.print(raw);
   Serial.print("  temp="); Serial.println(avgTemp, 1);
