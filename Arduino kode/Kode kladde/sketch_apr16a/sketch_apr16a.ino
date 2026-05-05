@@ -14,6 +14,8 @@ const uint16_t moveDistance = 512; //16 bits to be able to hold 512 in binary
 const uint8_t buttonPin = 15; // D8
 const uint8_t echoPin = 2; //D4 (10k pull-up til 3.3V — boot-pin)
 const uint8_t trigPin = 0; //D3
+
+
 // Virkende wiring stepper:
 // D5 (GPIO14) -> IN1
 // D7 (GPIO13) -> IN2
@@ -68,27 +70,49 @@ State CurrentState = LOAD;
 Stepper myStepper(stepsPerRevolution, 14, 12, 13, 16);
 U8G2_SH1106_128X64_NONAME_F_SW_I2C display(U8G2_R0, SCL_PIN, SDA_PIN, U8X8_PIN_NONE);
 
-float lastTemp = NAN;
-
+float avgTemp = 0;
+float OldTemp = 0;
+static uint8_t i = 0; 
+const uint8_t Readings = 10;
 void readLM35() {
-  int raw = analogRead(A0);
+  float Temp = 0;
+  uint16_t raw = 0; 
+
   // LM35: 10 mV/°C. Juster 3.3f til faktisk ADC-reference for dit board.
-  // Kalibrering: mål rigtig temperatur T_ref, sæt multiplier = T_ref / (raw * 100 / 1023)
-  // T_ref = 24,5 - raw = 112
-  // 24,5 / (112 * 100 * 1023) = 2,2378125
-  lastTemp = raw * (2.24f / 1023.0f) * 100.0f;
+
+  for(i = 0; i < Readings; i++){
+    raw += analogRead(A0);
+    delay(10);
+
+}
+
+  float avgRaw = (float)raw / Readings;
+  
+  Temp = avgRaw * (2.667f / 1023.0f) * 100.0f;   
+
+  if (OldTemp == 0) {
+      OldTemp = Temp; 
+  }
+
+  avgTemp = ((3.0f * Temp + 7.0f * OldTemp) / 10.0f); //IIR Filter 
+
+  OldTemp = avgTemp;
+
   Serial.print("[LM35] raw="); Serial.print(raw);
-  Serial.print("  temp="); Serial.println(lastTemp, 1);
+  Serial.print("  temp="); Serial.println(avgTemp, 1);
   tsDataDirty = true;
 }
+
+
+
 
 void updateDisplay() {
   static const char* stateNames[] = {"LOAD", "CHECK", "CLOSE", "EMPTY_ME"};
   char buf[32];
   display.clearBuffer();
   display.setFont(u8g2_font_ncenB08_tr);
-  if (!isnan(lastTemp))
-    snprintf(buf, sizeof(buf), "Temp: %.1f C", lastTemp);
+  if (!isnan(avgTemp))
+    snprintf(buf, sizeof(buf), "Temp: %.1f C", avgTemp);
   else
     strcpy(buf, "Temp: --");
   display.drawStr(0, 12, buf);
@@ -104,6 +128,10 @@ void moveForward(int x) {
     myStepper.step(1);
     yield();
   }
+  digitalWrite(14, LOW);
+  digitalWrite(12, LOW);
+  digitalWrite(13, LOW);
+  digitalWrite(16, LOW);
 }
 
 void moveBackward(int x) {
@@ -111,6 +139,10 @@ void moveBackward(int x) {
     myStepper.step(-1);
     yield();
   }
+  digitalWrite(14, LOW);
+  digitalWrite(12, LOW);
+  digitalWrite(13, LOW);
+  digitalWrite(16, LOW);
 }
 
 
@@ -165,7 +197,7 @@ void Ultra_Sense(){
   tsDataDirty = true;
   // *This if statement should trigger after a set amount of time ex 1min dosen't trigger imitietly
   // Trigger state switch when trash is 10cm or closer to being complately full.
-  if (distance <= 10){
+  if (distance <= 8){
 
     if (CurrentState != CLOSE) pendingBagFull = true;
     CurrentState = CLOSE;
@@ -199,8 +231,8 @@ void tsPush() {
              + "&field3=" + String((int)CurrentState)
              + "&field4=" + String(pendingBagFull ? 1 : 0);
   if (lastDistance >= 0) url += "&field1=" + String(lastDistance, 1);
-  if (!isnan(lastTemp))
-    url += "&field6=" + String(lastTemp, 1);
+  if (!isnan(avgTemp))
+    url += "&field6=" + String(avgTemp, 1);
   http.begin(client, url);
   int code = http.GET();
   Serial.print("[TS push] HTTP "); Serial.println(code);
@@ -281,6 +313,13 @@ void loop() {
       Ultra_Sense();
       readLM35();
       updateDisplay();
+
+
+      char pbuf[32];
+      snprintf(pbuf, sizeof(pbuf), "%.0f%% Full", constrain(100.0f * (28.0f - lastDistance) / 28.0f, 0.0f, 100.0f));
+      display.drawStr(55, 55, pbuf);
+      display.sendBuffer();
+
     break;
 
     case CLOSE:
