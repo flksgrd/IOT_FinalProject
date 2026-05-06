@@ -32,8 +32,8 @@ const uint8_t trigPin = 0; //D3
 #define SCL_PIN      5   // D1
 
 // WiFi (UDFYLD inden upload)
-const char* WIFI_SSID     = "EKB";
-const char* WIFI_PASSWORD = "ekbballerup";
+const char* WIFI_SSID     = "WutanLan";
+const char* WIFI_PASSWORD = "Tusser!2";
 
 // ThingSpeak: kanal 3364403. Free tier kræver min. 15s mellem writes -> push throttle 16s.
 // Field5 læses hvert 30s og bruges som fjern-kommando til at sætte antal poser.
