@@ -178,6 +178,8 @@ void setup() {
 
   wifiConnect();
   updateDisplay();
+
+  wifi_set_sleep_type(MODEM_SLEEP_T); // This is modem sleep mode for less power compsumption
 }
 
 
@@ -309,7 +311,7 @@ void loop() {
     break;
 
     case CHECK:
-      delay(5000);
+      delay(5000); //600 000 - 10 min in milliseconds
       Ultra_Sense();
       readLM35();
       updateDisplay();
