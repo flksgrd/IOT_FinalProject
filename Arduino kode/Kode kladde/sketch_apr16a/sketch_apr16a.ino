@@ -211,16 +211,6 @@ void Ultra_Sense(){
 }
 
 
-/*
-void Ligthsens(){
-
-int sensor = analogRead(A0);
-int PWMValue = map(sensor, 0, 1023, 0, 1023);
-analogWrite(LED_pin, pwmValue)
-
-}
-*/
-
 // Pusher Field1=afstand, Field2=poser tilbage, Field3=state, Field4=bag-full event,
 //         Field6=temperatur (C), Field7=fugtighed (%)
 void tsPush() {
