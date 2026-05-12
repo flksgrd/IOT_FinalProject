@@ -19,4 +19,39 @@
 
 \lipsum[]
 
+\begin{figure}[!ht]
+\centering
+\resizebox{1\textwidth}{!}{%
+\begin{circuitikz}
+\tikzstyle{every node}=[font=\fontsize{18.2pt}{23.7pt}\selectfont]
+
+% Definer de 4 states
+\draw  (7,25) circle (1.875cm) node[ inner xsep=0.080cm, inner ysep=0.085cm, rounded corners=0.020cm] {\fontsize{19.9pt}{25.9pt}\selectfont Load} ;
+\draw  (16,25) circle (1.875cm) node[ inner xsep=0.080cm, inner ysep=0.085cm, rounded corners=0.020cm] {\fontsize{19.9pt}{25.9pt}\selectfont Check} ;
+\draw  (16,16) circle (1.875cm) node[ inner xsep=0.080cm, inner ysep=0.085cm, rounded corners=0.020cm] {\fontsize{19.9pt}{25.9pt}\selectfont Close} ;
+\draw  (7,16) circle (1.875cm) node[ inner xsep=0.080cm, inner ysep=0.085cm, rounded corners=0.020cm] {\fontsize{19.9pt}{25.9pt}\selectfont EmptyMe} ;
+
+% Pile og betingelser (Transitions)
+% Load -> Check
+\draw [-{Stealth[scale=1.5]}, ] (8.875,25) -- (14.125,25) 
+    node[pos=0.5, fill={rgb,255:red,255; green,255; blue,255}, fill opacity=1, text opacity=1, inner xsep=0.080cm, inner ysep=0.085cm, rounded corners=0.020cm] {Button = HIGH};
+
+% Check -> Close
+\draw [-{Stealth[scale=1.5]}, ] (16,23.125) -- (16,17.875) 
+    node[pos=0.5, fill={rgb,255:red,255; green,255; blue,255}, fill opacity=1, text opacity=1, inner xsep=0.080cm, inner ysep=0.085cm, rounded corners=0.020cm] {Distance $\le$ 8cm};
+
+% Close -> EmptyMe
+\draw [-{Stealth[scale=1.5]}, ] (14.125,16) -- (8.875,16) 
+    node[pos=0.5, fill={rgb,255:red,255; green,255; blue,255}, fill opacity=1, text opacity=1, inner xsep=0.080cm, inner ysep=0.085cm, rounded corners=0.020cm] {Motors done};
+
+% EmptyMe -> Load
+\draw [-{Stealth[scale=1.5]}, ] (7,17.875) -- (7,23.125) 
+    node[pos=0.5, fill={rgb,255:red,255; green,255; blue,255}, fill opacity=1, text opacity=1, inner xsep=0.080cm, inner ysep=0.085cm, rounded corners=0.020cm] {Button = HIGH};
+
+\end{circuitikz}
+}%
+\caption{State machine diagram for the smart trash can}
+\label{fig:state_machine}
+\end{figure}
+
 \end{document}
