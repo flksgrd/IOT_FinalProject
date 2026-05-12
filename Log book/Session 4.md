@@ -12,8 +12,3 @@
 - Sigurd continues with CAD and makes adjustments based on our learnings with the first prototype.
 - Jonas, Tobias and Andreas is beginning to implement the different motor options into the first prototype, and test with the draft of our code.
 - Anders have created and begun writing an Overleaf document for the report as well as streamlining the log book proces.
-
-#### Task to be done before next week:
-- *Anders*
-  Start the poster design (Probably Canva)
-  3D-print prototype 2
