@@ -12,13 +12,9 @@
 \section{Hardware design}
 \label{sec:hardware}
 
-\subsection{Microcontroller}
-\label{sec:mcu}
-
-The brain of the bin is an \textbf{ESP8266 NodeMCU} module -- a small, cheap microcontroller board with built-in WiFi, programmed from the Arduino IDE. For our project the ESP8266 was the natural trade-off: cheap (\textasciitilde 30\,DKK), small enough to mount inside the bin lid, fast enough to drive the closure mechanism while still talking to the cloud, and natively WiFi-enabled so we do not need an external radio module. It was not, however, the ideal candidate. The ESP8266 only exposes a handful of usable GPIO pins, and several of those have boot-time roles, which made the pin layout one of the recurring headaches of the project -- we had to move stepper coils, share the I\textsuperscript{2}C bus with the OLED and drop a MOSFET we had originally planned for the power line in order to fit everything onto the available pins (see Section~\ref{sec:hardware}). In the end it works, but a board with more free GPIO would have made the integration noticeably less painful.
-
-\subsection{Component list}
-\label{sec:components}
+The brain of the bin is an \textbf{ESP8266 NodeMCU} module -- a small, cheap microcontroller board with built-in WiFi, programmed from the Arduino IDE. For our project the ESP8266 was the natural trade-off: cheap (\textasciitilde 30\,DKK), small enough to mount inside the bin lid, fast enough to drive the closure mechanism while still talking to the cloud, and natively WiFi-enabled so we do not need an external radio module. It was not, however, the ideal candidate: the ESP8266 only exposes a handful of usable GPIO pins and several of those have boot-time roles, which made the pin layout one of the recurring headaches of the project.
+\\ \\
+Around the ESP we built up the rest of the hardware listed in Table~\ref{tab:components}. The selection satisfies the course's component requirements -- one analog sensor (LM35), one digital sensor (HC-SR04), one form of actuation (the steppers) and an on-device display (the OLED).
 
 \begin{table}[H]
     \centering
@@ -37,12 +33,7 @@ The brain of the bin is an \textbf{ESP8266 NodeMCU} module -- a small, cheap mic
     \label{tab:components}
 \end{table}
 
-This selection satisfies the course requirement of at least one analog sensor (LM35), one digital sensor (HC-SR04), one form of actuation (steppers) and an on-device display (SSD1306 OLED).
-
-\subsection{Circuit diagram and pinout}
-\label{sec:pinout}
-
-Power is supplied over USB at 5\,V. The ESP8266 runs from its onboard 3.3\,V regulator, while the stepper drivers and the OLED share the 5\,V rail. The ultrasonic Echo line is divided down with a 1\,k$\Omega$/2\,k$\Omega$ resistor divider before reaching the ESP, since the HC-SR04 outputs 5\,V on Echo but the ESP8266's GPIO is 3.3\,V-only.
+Power is supplied over USB at 5\,V. The ESP8266 runs from its onboard 3.3\,V regulator, while the stepper drivers and the OLED share the 5\,V rail. The HC-SR04 outputs 5\,V on its Echo line, so it is divided down with a 1\,k$\Omega$/2\,k$\Omega$ resistor pair before reaching a 3.3\,V-only GPIO. The full pinout is listed in Table~\ref{tab:pinout}, and a larger circuit diagram is reproduced in the appendix.
 
 \begin{table}[H]
     \centering
@@ -64,12 +55,7 @@ Power is supplied over USB at 5\,V. The ESP8266 runs from its onboard 3.3\,V reg
     \label{tab:pinout}
 \end{table}
 
-During the project we made two hardware changes worth documenting. First, IN4 was moved from D1 to D0 once the OLED was added, because D1 is the I\textsuperscript{2}C SCL line. Second, a MOSFET that had been inserted on the stepper power line was removed again, because it ended up wired to the TX pin and broke serial logging. Idle current is now reduced instead by pulling all four coil pins LOW in software after each move -- same effect, one fewer part on the PCB.
-
-\subsection{Mechanical design}
-\label{sec:mechanics}
-
-The chassis was modelled in CAD and 3D-printed in PLA, iterating through several prototypes. The final version uses two 28BYJ-48 steppers mounted on either side of the lid, each pulling its own plastic string attached to the bag opening. The dual-motor design distributes the closing force evenly and avoids the bag twisting on itself, which was a recurring failure mode of the single-motor prototype.
+The chassis itself was modelled in CAD and 3D-printed in PLA, iterating through several prototypes. The final version uses two 28BYJ-48 steppers mounted on either side of the lid, each pulling its own plastic string attached to the bag opening. The dual-motor design distributes the closing force evenly and avoids the bag twisting on itself, which was a recurring failure mode of the single-motor prototype.
 
 \ifdefined\mainfile\else
 \end{document}

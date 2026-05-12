@@ -12,42 +12,19 @@
 \section{Reflection}
 \label{sec:reflection}
 
-\subsection{Problems we encountered}
-\label{sec:reflection-problems}
+The five biggest problems we ran into during the project, and how we resolved each:
 
 \begin{itemize}
-    \item \textbf{Pin conflicts on the ESP8266.} The ESP only has a handful of "safe" GPIOs, and several of them have boot-time roles. Adding the OLED forced us to move a stepper coil pin (IN4 from D1 to D0), and our temporary MOSFET on the stepper power line turned out to be wired to TX, which silently killed serial logging until we tracked it down.
-    \item \textbf{Noisy LM35 readings.} The first temperature readings were both biased and noisy. The bias came from the ADC reference being miscalibrated; the noise came from sampling at full rate with no smoothing.
-    \item \textbf{Single-motor closure was unreliable.} A single motor pulling one string caused the bag to twist instead of sealing.
-    \item \textbf{Dashboard flashing \texttt{--}.} Whenever the dashboard wrote field 5, ThingSpeak created a new entry with the other fields blank. The dashboard's "latest entry" naively showed those blanks.
-    \item \textbf{OFFLINE detection.} Our first attempt watched HTTP status codes; ThingSpeak returned 200 OK even when the ESP was dead, because it was serving cached data.
+    \item \textbf{Pin conflicts on the ESP8266.} The ESP only has a handful of "safe" GPIOs and several of those have boot-time roles. Adding the OLED forced us to move a stepper coil pin (IN4 from D1 to D0), and a temporary MOSFET we put on the stepper power line turned out to be wired to TX, which silently killed serial logging until we tracked it down. We drew up a full pinout table on a whiteboard before adding the OLED, freed the I\textsuperscript{2}C bus by moving the coil, and replaced the MOSFET with a software trick -- pulling all four coil pins LOW after each move, which gives the same idle-current saving with one fewer component on the board.
+    \item \textbf{Noisy LM35 readings.} Early temperature readings were both biased and noisy: the bias came from a miscalibrated ADC reference, and the noise from sampling at full rate without smoothing. Calibrating the reference to 2.667\,V and adding an IIR filter (10-sample running mean blended 30/70 with the previous value) brought the steady-state error to within $\pm$1\,\textdegree C.
+    \item \textbf{Unreliable closure.} A single motor pulling one string caused the bag to twist on itself instead of sealing. Switching to two motors -- one on each side, each with its own string -- gave reliable closure across $>$20 attempts.
+    \item \textbf{Dashboard flashing \texttt{--}.} Whenever the dashboard wrote field 5, ThingSpeak created an entry with the other fields blank, and the naive "show the latest entry" code briefly showed dashes. Pulling the last 10 entries and walking backwards to the most recent one where \texttt{field1 != null} fixed the flash.
+    \item \textbf{OFFLINE detection.} Our first attempt watched HTTP status codes, but ThingSpeak returned 200 OK even when the ESP was dead because it was serving cached data. Replacing the HTTP-status check with an age check on the latest sensor reading ($>$90\,s = OFFLINE) reflects bin liveness honestly.
 \end{itemize}
 
-\subsection{How we overcame them}
-\label{sec:reflection-overcame}
-
-\begin{itemize}
-    \item Drew up a full pinout table on a whiteboard before adding the OLED, then moved coil pins to free up the I\textsuperscript{2}C bus. Removed the MOSFET and instead pull all four coil pins LOW after every move to keep idle current down.
-    \item Calibrated the ADC reference to 2.667\,V and added an IIR filter (10-sample running mean blended 30/70 with the previous value). Errors fell to within $\pm$1\,\textdegree C.
-    \item Switched to two motors, one on each side, each with its own string. Closure is now reliable across $>$20 attempts.
-    \item Pulled the last 10 ThingSpeak entries and walked backwards to the most recent entry with \texttt{field1 != null}. No more flashes.
-    \item Replaced the HTTP-status check with an age check on the latest sensor reading: $>$90\,s = OFFLINE. This honestly reflects bin liveness even when ThingSpeak is happy.
-\end{itemize}
-
-\subsection{What we learned}
-\label{sec:reflection-learned}
-
-\begin{itemize}
-    \item Cloud-backed IoT pipelines work best when the cloud is the single source of truth and no two endpoints try to talk to each other directly. Once we accepted "ThingSpeak is the only middleman", every protocol question got simpler.
-    \item Free-tier rate limits shape the architecture more than we initially expected. The 15\,s minimum between ThingSpeak writes drove the cadence of the whole device, and the worst-case round-trip latency had to be communicated in the UI.
-    \item Diagnostic surfaces matter. We added an OFFLINE pill, toasts on Save, and verbose serial logging early -- and we relied on them every single session.
-    \item Mechanical design eats more time than firmware. The string-closure mechanism went through more iterations than the firmware did.
-\end{itemize}
-
-\subsection{Who did what}
-\label{sec:reflection-who}
-
-A complete breakdown with percentage distribution is given in Appendix~\ref{sec:appendix-who}. The log book entries for sessions 1--6 are available alongside the report bundle uploaded to DTU LEARN.
+The headline lessons from doing the project: cloud-backed IoT systems are easiest to reason about when the cloud is the single source of truth and the endpoints never talk to each other directly -- once we accepted that "ThingSpeak is the only middleman", every protocol question got simpler. Free-tier rate limits shape the architecture more than we expected; the 15\,s minimum between ThingSpeak writes drove the cadence of the whole device and the worst-case round-trip latency had to be communicated in the UI. Diagnostic surfaces matter, and we leaned on the OFFLINE pill, the Save toast and verbose serial logging every single session. And finally, the mechanical design ate more time than the firmware -- the string-closure mechanism went through more iterations than any other part of the project.
+\\ \\
+A complete who-did-what breakdown and the percentage distribution of effort is given in the appendix.
 
 \ifdefined\mainfile\else
 \end{document}

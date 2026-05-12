@@ -12,38 +12,13 @@
 \section{How we present data to the user}
 \label{sec:presentation}
 
-The user sees information about the bin in three different places, each chosen for a different context.
-
-\subsection{The web dashboard}
-\label{sec:dashboard-ui}
-
-The primary surface is the dashboard at \url{https://dtutrash.netlify.app/}. It is intentionally a single page with four large cards -- \emph{Bags remaining}, \emph{Distance}, \emph{State} and \emph{Temperature} -- so the user can glance at it on their phone and immediately understand the bin's status. The page auto-refreshes every 5 seconds.
-
-Two small UX details are worth calling out because they cost real effort to get right:
-
-\begin{itemize}
-    \item \textbf{ONLINE/OFFLINE pill.} The pill in the top-right corner is not based on HTTP success -- ThingSpeak will happily serve cached data when the ESP is unplugged. Instead the dashboard checks the age of the latest ESP reading: if it is older than 90\,s (three times the ESP's polling cycle), the pill flips to OFFLINE. This honestly reflects whether the bin is alive.
-    \item \textbf{Filtering out command-only entries.} When the user writes a new bag count, ThingSpeak creates a new entry where \texttt{field5} is set but \texttt{field1/2/3} are \texttt{null}. If the dashboard simply showed the latest entry it would briefly display \texttt{--} for distance and bags. Instead it pulls the 10 most recent entries and walks backwards to find the latest one with \texttt{field1 != null}.
-\end{itemize}
-
-The dashboard also has a single input box and a Save button to set the bag inventory remotely. The flow is: the dashboard writes the desired count to field 5; the ESP polls field 5 within 30\,s, copies it into its internal counter, and confirms by writing the new value back to field 2 on the next push. The dashboard then sees field 2 update on its next refresh. Worst-case round-trip is approximately $30 + 16 + 5 = 51$ s, which we communicate to the user with a toast that says "Set to X bags -- ESP fetches in $<$30\,s".
-
-\subsection{The on-device OLED}
-\label{sec:oled}
-
-A 0.96\,\textquotedbl\ SSD1306 OLED on the lid shows the current FSM state in plain English (\textsc{Ready}, \textsc{Checking}, \textsc{Closing bag}, \textsc{Replace bag}) plus the current bag inventory and the latest temperature reading. This is the channel for moments when the user is actually standing at the bin and does not want to pull out their phone.
-
-\subsection{Push notifications}
-\label{sec:notifications}
-
-For asynchronous alerts -- "your bag is full" or "you are running out of bags" -- the system pushes through IFTTT. The user does not need any app of ours installed; they only need IFTTT, which most households already have for other automations. Two notifications are configured:
-
-\begin{itemize}
-    \item \emph{Trash bag is full -- please replace it} (triggered by \texttt{field4 = 1}).
-    \item \emph{Running low on trash bags} (triggered by \texttt{field2 $<$ 3}).
-\end{itemize}
-
-This three-channel split -- live dashboard for monitoring, OLED for at-the-bin glances, notifications for time-critical events -- mirrors how the user would actually interact with the product in a real kitchen.
+The user sees the bin's status through three surfaces, each chosen for a different context. The primary one is the web dashboard at \url{https://dtutrash.netlify.app/} -- a single page with four large cards (\emph{Bags remaining}, \emph{Distance}, \emph{State} and \emph{Temperature}) that auto-refreshes every 5 seconds, plus an input box for remotely setting the bag inventory. Writing to that input pushes the new count to ThingSpeak field 5; the ESP polls field 5 within 30\,s, copies it into its internal counter, and confirms by writing the value back on field 2, which the dashboard then picks up. Worst-case round-trip is roughly $30 + 16 + 5 = 51$ s, which we communicate to the user with a toast that says \emph{"Set to X bags -- ESP fetches in $<$30\,s"}.
+\\ \\
+Two small details on the dashboard cost real effort to get right. The first is the ONLINE/OFFLINE pill in the top-right corner: ThingSpeak will happily serve cached data even when the ESP is unplugged, so HTTP success says nothing about whether the bin is alive. The pill instead checks the age of the latest ESP reading and flips to OFFLINE if it is older than 90\,s. The second is filtering out command-only entries -- when the dashboard writes field 5, ThingSpeak creates a new entry where the other fields are \texttt{null}; if the dashboard naively showed that entry the cards would briefly flash \texttt{--}. Instead the dashboard pulls the 10 most recent entries and walks backwards to the latest one where \texttt{field1 != null}.
+\\ \\
+The second surface is the on-device OLED display. The SSD1306 on the lid shows the current FSM state in plain English (\textsc{Ready}, \textsc{Checking}, \textsc{Closing bag}, \textsc{Replace bag}) plus the current bag inventory and the latest temperature reading. It is the channel for moments when the user is standing at the bin and does not want to pull out their phone.
+\\ \\
+The third surface is push notifications, delivered via IFTTT and triggered by a ThingSpeak React rule: \emph{Trash bag is full -- please replace it} fires on \texttt{field4 = 1}, and \emph{Running low on trash bags} fires on \texttt{field2 $<$ 3}. The user does not need a custom app -- only IFTTT, which most households already have for other automations. The three channels together (live dashboard for monitoring, OLED for at-the-bin glances, notifications for time-critical events) mirror how the user would interact with the product in a real kitchen.
 
 \ifdefined\mainfile\else
 \end{document}
