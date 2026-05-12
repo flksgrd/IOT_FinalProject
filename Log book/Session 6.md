@@ -1,19 +1,19 @@
-#### Date: 07/05/2026
+#### Date: 30/04/2026
 
 | Name               | Study Number | Present | Absent | Note | Signature |
 | ------------------ | :----------: | :-----: | :----: | :--: | --------- |
-| Jonas Jensen       |   s240324    |         |        |      |           |
-| Andreas Jacobsen   |   s241123    |         |        |      |           |
-| Sigurd Hestbech    |   s245534    |         |        |      |           |
-| Tobias Nilsson     |   s233987    |         |        |      |           |
-| Mads Rudolph       |   s246132    |         |        |      |           |
-| Anders Falkesgaard |   s245905    |         |        |      |           |
+| Jonas Jensen       |   s240324    |    x    |        |      |           |
+| Andreas Jacobsen   |   s241123    |    x    |        |      |           |
+| Sigurd Hestbech    |   s245534    |    x    |        |      |           |
+| Tobias Nilsson     |   s233987    |    x    |        |      |           |
+| Mads Rudolph       |   s246132    |    x    |        |      |           |
+| Anders Falkesgaard |   s245905    |    x    |        |      |           |
+We started the day in Lyngby where we heard the presentation and had a status meeting with our mentor. Afterwards we drove to Ballerup, where we have access to a coworking space as well as two 3D-printers. 
 #### Task carried out during the session:
-- Anders added an SSD1306 OLED display and a temperature sensor to the bin. Started with a DHT11 (temp + humidity) but switched to a simpler LM35 (temperature only), and updated the ThingSpeak push to send the value on Field 6.
-- Jonas fixed the stepper pinout (moved IN4 from D1 to D0 so the OLED can use the I2C SCL line) and adjusted the closing distance in EMPTY_ME.
-- The team calibrated the LM35 ADC reference voltage to 2.667 V and added an IIR filter (10-sample average + 30/70 weighted blend) to smooth the temperature readings.
-- The MOSFET added in last session was removed because it conflicted with the TX pin and broke Serial logging. Instead the stepper coil pins are now pulled LOW after each move, which gives the same idle-current saving without an extra component.
-- Anders redesigned the web dashboard: translated the UI from Danish to English, added a temperature card with a thermometer SVG, and added a status pill that flips to OFFLINE when the ESP hasn't pushed data for >90 s.
-- Anders wrote an explainer document (`How the web dashboard works.md`) describing the ESP ↔ ThingSpeak ↔ dashboard flow for the rest of the team and the report.
-
-#### Task to be done before next week:
+- Mads integrated ThingSpeak and IFTTT into the firmware: the bin now pushes bag count, distance, state and bag-full events to the cloud, and reads bag-count updates from the phone via Field 5.
+- Set up the ThingSpeak channel with ThingHTTP entries and React rules so a "bag full" or "low bags" event triggers a push notification on the phone via IFTTT.
+- Built and deployed a small web dashboard at https://dtutrash.netlify.app/ for viewing live bag count, distance and state, with an input field to set the bag count remotely.
+- Updated the README to reflect the current IoT pipeline and the new dashboard.
+- Jonas and Andreas worked on optimizing the code (adjusted stepper distance, code cleanup) and troubleshooting the closing mechanism.
+- Added a MOSFET on the stepper-driver power line to make it more efficient and reduce idle current.
+- Tobias started designing the custom PCB-board. 
