@@ -2,17 +2,15 @@
 \documentclass{article}
 \usepackage{graphicx}
 \usepackage{float}
-\usepackage{amsmath}
-\usepackage{amssymb}
 \usepackage[a4paper, left=2.5cm, right=2.5cm, top=2.5cm, bottom=2.5cm]{geometry}
 \usepackage[colorlinks=true,linkcolor=black,citecolor=blue,urlcolor=blue]{hyperref}
 \begin{document}
 \fi
 
-\section{Appendix -- Who did what}
+\section{Who did what}
 \label{sec:appendix-who}
 
-The table below summarises module ownership during the project. The "share" column gives an approximate percentage distribution of effort per group member across the project as a whole (estimated jointly by the group at the end of the project; the total is 100\%).
+The table below summarises module ownership during the project. The "share" column gives an approximate percentage distribution of effort per group member across the project as a whole, estimated jointly by the group at the end of the project. The total sums to 100\%.
 
 \begin{table}[H]
     \centering
@@ -21,11 +19,11 @@ The table below summarises module ownership during the project. The "share" colu
         \hline
         Mechanical / CAD design                  & Sigurd, Anders              & 3D-printed prototypes \\
         Motor + sensor integration               & Jonas, Tobias, Andreas      & ULN2003, HC-SR04 \\
-        Firmware (state machine, ESP8266)        & Mads                        & sketch\_apr16a.ino \\
+        Firmware (state machine, ESP8266)        & Mads                        & \texttt{sketch\_apr16a.ino} \\
         ThingSpeak + IFTTT integration           & Mads                        & React rules, applets \\
-        Web dashboard                            & Anders                      & docs/index.html \\
+        Web dashboard                            & Anders                      & \texttt{docs/index.html} \\
         OLED + LM35 (display, temperature)       & Anders                      & SSD1306 I\textsuperscript{2}C, IIR filter \\
-        Report                                   & All                         & 17 May \\
+        Report                                   & All                         & \\
     \end{tabular}
     \caption{Module ownership}
     \label{tab:modulansvar}
@@ -48,18 +46,6 @@ The table below summarises module ownership during the project. The "share" colu
     \caption{Approximate percentage distribution of effort per group member}
     \label{tab:tidsforbrug}
 \end{table}
-
-\subsection*{Appendix contents}
-
-The remaining appendix items required by the course are uploaded to DTU LEARN alongside this PDF, not inlined here:
-
-\begin{itemize}
-    \item \textbf{Log book} -- sessions 1--6, located in the project repository under \texttt{Log book/}.
-    \item \textbf{Group contract} -- signed in session 1.
-    \item \textbf{Self-evaluation} -- per group and per individual.
-    \item \textbf{Videos and photos} of the working bin (recorded on 7 May, before equipment was returned).
-    \item \textbf{Full source code} -- Arduino firmware (\texttt{sketch\_apr16a.ino}) and dashboard (\texttt{docs/index.html}), supplied as a single zip.
-\end{itemize}
 
 \ifdefined\mainfile\else
 \end{document}

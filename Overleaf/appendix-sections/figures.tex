@@ -1,0 +1,24 @@
+\ifdefined\mainfile\else
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage[a4paper, left=2.5cm, right=2.5cm, top=2.5cm, bottom=2.5cm]{geometry}
+\usepackage[colorlinks=true,linkcolor=black,citecolor=blue,urlcolor=blue]{hyperref}
+\begin{document}
+\fi
+
+\section{Larger figures}
+\label{sec:appendix-figures}
+
+This appendix reproduces the report's main figures at a larger size for readability.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\linewidth]{images/system/state_diagram.png}
+    \caption{Device-side state machine of the ESP8266 firmware. \textsc{reset} initialises the system after a bag is replaced. \textsc{check} polls the ultrasonic sensor; on \texttt{Full=1} it transitions to \textsc{close}, which drives the stepper motors and pushes a bag-full event to ThingSpeak. \textsc{emptyme} waits for the user to reset. \textsc{help} is an error state reached on overfill or stuck-motor conditions.}
+    \label{fig:appendix-state-diagram}
+\end{figure}
+
+\ifdefined\mainfile\else
+\end{document}
+\fi

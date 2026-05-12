@@ -1,0 +1,54 @@
+\documentclass{article}
+\usepackage{subcaption}
+\usepackage{graphicx}
+\usepackage[absolute,overlay]{textpos}
+\usepackage{float}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage[a4paper, left=2.5cm, right=2.5cm, top=2.5cm, bottom=2.5cm]{geometry}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage[colorlinks=true,
+            linkcolor=black,
+            citecolor=blue,
+            urlcolor=blue]{hyperref}
+
+\title{IoT -- Smart Trash Bin \\ \large Appendix}
+\author{Anders Falkesgaard (s245905), Andreas Jacobsen (s241123)
+\\Jonas Beck Jensen (s240324), Mads Rudolph (s246132)
+\\Sigurd Hestbech Christiansen (s245534), Tobias Nilsson (s233987)}
+\date{May 2026}
+
+\newcommand{\mainfile}{}
+
+\begin{document}
+
+% Logo in top right
+\begin{textblock*}{3cm}(17.5cm,1cm)
+  \includegraphics[scale=0.5]{images/frontpage/dtu_logo.png}
+\end{textblock*}
+
+\maketitle
+
+\begin{center}
+     \textbf{Course 34315 -- IoT application and infrastructure implementation} \\[0.5em]
+     \textbf{\large Group 16 -- Appendix}
+\end{center}
+
+\vspace{1cm}
+
+This document is the appendix to the project report for the Smart Trash Bin project. It is uploaded to DTU LEARN as a separate PDF alongside the main report and the source-code bundle.
+
+\newpage
+\tableofcontents
+\newpage
+
+\input{appendix-sections/who-did-what}
+\input{appendix-sections/figures}
+\input{appendix-sections/log-book}
+\input{appendix-sections/group-contract}
+\input{appendix-sections/self-evaluation}
+
+\end{document}
