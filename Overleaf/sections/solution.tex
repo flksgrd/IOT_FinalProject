@@ -21,7 +21,7 @@ Our solution is a connected trash bin that closes its own bag and reports its st
     \item \textbf{IFTTT push notifications} -- triggered by ThingSpeak React rules when a bag-full event fires or when the bag stock runs low.
 \end{itemize}
 
-\textbf{Instructions for use.} After mounting a new bag, the user presses the reset button. The bin then enters its \textsc{check} state and silently monitors the fill level using an ultrasonic sensor. When the distance from the sensor down to the trash drops below 10\,cm (\textasciitilde 80\% full), the bin enters its \textsc{close} state: two stepper motors pull plastic strings attached to the bag opening, tying it shut. The bin then enters \textsc{empty\_me} and pushes a notification to the user's phone. After the user replaces the bag and presses reset, the cycle starts over. The OLED display on the bin shows the current state and remaining bags so the user knows what is happening without checking their phone.
+\textbf{Instructions for use.} After mounting a new bag, the user presses the reset button. The bin then enters its \textsc{check} state and silently monitors the fill level using an ultrasonic sensor. When the distance from the sensor down to the trash drops below 10\,cm (\textasciitilde 80\% full), the bin enters its \textsc{close} state: two stepper motors pull plastic strings attached to the bag opening, tying it shut. The bin then enters \textsc{empty\_me} and pushes a notification to the user's phone. After the user replaces the bag and presses reset, the cycle starts over. The OLED display on the bin shows the current state so the user knows what is happening without checking their phone.
 
 Figure~\ref{fig:state-diagram} summarises the device-side state machine.
 
@@ -51,11 +51,11 @@ Figure~\ref{fig:state-diagram} summarises the device-side state machine.
 
 % Check -> Close
 \draw [-{Stealth[scale=1.5]}, ] (16,23.125) -- (16,17.875) 
-    node[pos=0.5, fill={rgb,255:red,255; green,255; blue,255}, fill opacity=1, text opacity=1, inner xsep=0.080cm, inner ysep=0.085cm, rounded corners=0.020cm] {Distance $\le$ 8};
+    node[pos=0.5, fill={rgb,255:red,255; green,255; blue,255}, fill opacity=1, text opacity=1, inner xsep=0.080cm, inner ysep=0.085cm, rounded corners=0.020cm] {Distance $\le$ 8 cm};
 
 % Close -> EmptyMe
 \draw [-{Stealth[scale=1.5]}, ] (14.125,16) -- (8.875,16) 
-    node[pos=0.5, fill={rgb,255:red,255; green,255; blue,255}, fill opacity=1, text opacity=1, inner xsep=0.080cm, inner ysep=0.085cm, rounded corners=0.020cm] {Auto (Motor done)};
+    node[pos=0.5, fill={rgb,255:red,255; green,255; blue,255}, fill opacity=1, text opacity=1, inner xsep=0.080cm, inner ysep=0.085cm, rounded corners=0.020cm] {Motors done)};
 
 % EmptyMe -> Load
 \draw [-{Stealth[scale=1.5]}, ] (7,17.875) -- (7,23.125) 
