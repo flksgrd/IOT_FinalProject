@@ -12,6 +12,3 @@
 - Github created 
 - Discussion and final decision to go with the trash can project.
 - Further brainstorming about the general design choice (Which type of bags, size, mechanism options, etc.)
-
-#### Task to be done before next week:
-- 
