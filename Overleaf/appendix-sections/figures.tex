@@ -64,71 +64,26 @@ This appendix reproduces the report's main figures at a larger size for readabil
 
 \begin{figure}[H]
     \centering
-    \tbdimg{the live dashboard at \url{https://dtutrash.netlify.app/} showing the four cards and ONLINE pill}{dashboard\_main.png}
-    % \includegraphics[width=0.9\textwidth]{images/screenshots/dashboard_main.png}
-    \caption{Web dashboard hosted on Netlify -- live view of bag count, distance, state and temperature.}
+    \includegraphics[width=0.45\textwidth]{images/screenshots/dashboard_main.png}
+    \caption{Web dashboard hosted on Netlify -- live view of distance, bags remaining, temperature and FSM state, with the OFFLINE pill in the top-right corner. The "Set bag count" input writes to ThingSpeak field 5, which the ESP picks up on its next 30\,s poll.}
     \label{fig:dashboard-main}
 \end{figure}
 
-\begin{figure}[H]
-    \centering
-    \tbdimg{the bag-count input + Save toast after writing field 5}{dashboard\_set\_bags.png}
-    % \includegraphics[width=0.9\textwidth]{images/screenshots/dashboard_set_bags.png}
-    \caption{Setting the bag inventory remotely from the dashboard.}
-    \label{fig:dashboard-set-bags}
-\end{figure}
-
 % ------------------------------------------------------------------
-\subsection*{ThingSpeak channel and React rules}
+\subsection*{ThingSpeak channel}
 
 \begin{figure}[H]
     \centering
-    \tbdimg{ThingSpeak channel 3364403 overview, showing the six populated fields}{thingspeak\_channel.png}
-    % \includegraphics[width=0.9\textwidth]{images/screenshots/thingspeak_channel.png}
-    \caption{ThingSpeak channel 3364403 -- field definitions and live charts.}
+    \includegraphics[width=0.95\textwidth]{images/screenshots/thingspeak_channel.png}
+    \caption{ThingSpeak channel 3364403. Field 1 plots distance in cm, field 2 the bag inventory, field 3 the FSM state, field 4 the bag-full event flag, field 5 the dashboard's set-bag-count commands and field 6 the LM35 temperature reading.}
     \label{fig:thingspeak-channel}
-\end{figure}
-
-\begin{figure}[H]
-    \centering
-    \tbdimg{ThingSpeak \emph{React} rule for \texttt{field4 = 1} (bag full)}{thingspeak\_react\_bagfull.png}
-    % \includegraphics[width=0.9\textwidth]{images/screenshots/thingspeak_react_bagfull.png}
-    \caption{ThingSpeak React rule that fires the bag-full webhook.}
-    \label{fig:thingspeak-react-bagfull}
-\end{figure}
-
-\begin{figure}[H]
-    \centering
-    \tbdimg{ThingSpeak \emph{React} rule for \texttt{field2 < 3} (low bags)}{thingspeak\_react\_lowbags.png}
-    % \includegraphics[width=0.9\textwidth]{images/screenshots/thingspeak_react_lowbags.png}
-    \caption{ThingSpeak React rule that fires the low-bags webhook.}
-    \label{fig:thingspeak-react-lowbags}
-\end{figure}
-
-% ------------------------------------------------------------------
-\subsection*{IFTTT applets}
-
-\begin{figure}[H]
-    \centering
-    \tbdimg{IFTTT applet \emph{bag\_full} -- webhook trigger and notification action}{ifttt\_bagfull.png}
-    % \includegraphics[width=0.9\textwidth]{images/screenshots/ifttt_bagfull.png}
-    \caption{IFTTT applet that delivers the "bag full" push notification.}
-    \label{fig:ifttt-bagfull}
-\end{figure}
-
-\begin{figure}[H]
-    \centering
-    \tbdimg{IFTTT applet \emph{low\_bags} -- webhook trigger and notification action}{ifttt\_lowbags.png}
-    % \includegraphics[width=0.9\textwidth]{images/screenshots/ifttt_lowbags.png}
-    \caption{IFTTT applet that delivers the "low bags" push notification.}
-    \label{fig:ifttt-lowbags}
 \end{figure}
 
 \begin{figure}[H]
     \centering
     \tbdimg{phone screenshot of a received push notification}{phone\_notification.png}
     % \includegraphics[width=0.4\textwidth]{images/screenshots/phone_notification.png}
-    \caption{Push notification as it arrives on the user's phone.}
+    \caption{Push notification as it arrives on the user's phone (sent by IFTTT in response to a ThingSpeak React rule).}
     \label{fig:phone-notification}
 \end{figure}
 
