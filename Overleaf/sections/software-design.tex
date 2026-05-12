@@ -1,0 +1,41 @@
+\ifdefined\mainfile\else
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage[a4paper, left=2.5cm, right=2.5cm, top=2.5cm, bottom=2.5cm]{geometry}
+\usepackage[colorlinks=true,linkcolor=black,citecolor=blue,urlcolor=blue]{hyperref}
+\begin{document}
+\fi
+
+\section{Software design}
+\label{sec:software}
+
+The software has three layers -- firmware on the ESP8266, a ThingSpeak channel that mediates between everyone, and the static web dashboard hosted on Netlify -- and each layer is independent: if any one of them is restarted, the others keep working.
+\\ \\
+The firmware itself is written in Arduino C++ and built around an explicit state machine. The main loop dispatches on a \texttt{State} variable, and the four normal states (\textsc{load}, \textsc{check}, \textsc{close}, \textsc{empty\_me}) are joined by an error state (\textsc{help}) for overfill and stuck-motor conditions. Alongside the state machine, three concerns run on their own timers: the HC-SR04 is sampled by sending a 10\,$\mu$s trigger pulse and timing the echo, the LM35 is sampled through the ADC and smoothed with a 10-sample IIR filter blended 30/70 with the previous value, and a pair of non-blocking timers push fields 1--4 and 6 to ThingSpeak every 16\,s (the free-tier minimum is 15\,s) while polling field 5 -- the bag-count command from the dashboard -- every 30\,s. Between pushes the WiFi radio is dropped into light-sleep to cut idle current while still allowing the ESP to wake on a timer.
+\\ \\
+ThingSpeak channel 3364403 acts as the single source of truth. Six of its eight fields are in use (Table~\ref{tab:fields}); the device and the dashboard read from and write to the same numbered fields rather than talking to each other directly, which is the same pattern used for the IFTTT notification path.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{c|l|l|l}
+        \textbf{Field} & \textbf{Meaning} & \textbf{Written by} & \textbf{Read by} \\
+        \hline
+        1 & Distance (cm) from ultrasonic sensor & ESP & Dashboard \\
+        2 & Bags remaining                       & ESP & Dashboard, IFTTT React \\
+        3 & State (0=LOAD, 1=CHECK, 2=CLOSE, 3=EMPTY\_ME) & ESP & Dashboard \\
+        4 & Bag-full event (1 = full)            & ESP & IFTTT React \\
+        5 & Set-bag-count command                & Dashboard & ESP \\
+        6 & Temperature (\textdegree C) from LM35 & ESP & Dashboard \\
+    \end{tabular}
+    \caption{ThingSpeak field map}
+    \label{tab:fields}
+\end{table}
+
+All firmware and dashboard code lives in the project repository on GitHub, with the firmware in \texttt{Arduino\,kode/} and the dashboard in \texttt{docs/index.html}. The firmware relies on the standard ESP8266 Arduino core libraries (\texttt{ESP8266WiFi}, \texttt{ESP8266HTTPClient}), the built-in \texttt{Stepper} library for the 28BYJ-48 motors, and Adafruit's \texttt{GFX} + \texttt{SSD1306} libraries for the OLED; ThingSpeak's REST API is called directly via raw \texttt{http.GET()} requests with no client wrapper. The submitted DTU LEARN bundle includes the complete sketch, the dashboard source, and screenshots of the ThingSpeak React and IFTTT configuration so the cloud-side setup is reproducible.
+
+\ifdefined\mainfile\else
+\end{document}
+\fi

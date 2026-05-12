@@ -1,0 +1,25 @@
+\ifdefined\mainfile\else
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage[a4paper, left=2.5cm, right=2.5cm, top=2.5cm, bottom=2.5cm]{geometry}
+\usepackage[colorlinks=true,linkcolor=black,citecolor=blue,urlcolor=blue]{hyperref}
+\begin{document}
+\fi
+
+\section{Communication technologies}
+\label{sec:comms}
+
+The bin reaches the user through a short chain of standard-issue technologies: \textbf{WiFi} at the edge, \textbf{HTTP} to the cloud, and \textbf{IFTTT webhooks} for phone notifications. Each link in the chain was picked because something further down already had to be there, so the integration code is small and most of the moving parts are services we do not host ourselves.
+\\ \\
+At the edge, the bin joins the home network over standard 2.4\,GHz WiFi using the ESP8266's built-in radio. We chose WiFi over alternatives such as Bluetooth or LoRaWAN because almost every household already has a router, so the bin is plug-and-play, and because WiFi gives the device direct access to the internet -- we can talk straight to ThingSpeak without needing a separate gateway. The trade-off is power: WiFi draws noticeably more than a low-power radio like Bluetooth, and the bin stops working if the home WiFi is down. For a mains-powered kitchen appliance both costs are acceptable.
+\\ \\
+All cloud communication uses ordinary HTTP GET requests against the ThingSpeak REST API. Writing a sample is a single URL fetch, reading the latest samples is another, and both the ESP and the dashboard speak exactly the same protocol -- the integration code is symmetric and trivially simple. The main downsides are that traffic is unencrypted (acceptable for non-sensitive telemetry but not for production) and that each push is a full TCP+HTTP round-trip, which is heavy compared to a long-lived MQTT session.
+\\ \\
+Phone notifications go through a ThingSpeak \emph{React} rule that watches a field for a condition (\texttt{field4 = 1} or \texttt{field2 $<$ 3}) and fires a webhook to an IFTTT applet, which then delivers the push notification to the IFTTT app on the user's phone. This means we do not have to run a notification server of our own, the rules are configured in a browser without touching firmware, and the user gets native iOS/Android notifications. The downsides are that the extra hop adds a few seconds of latency and that both services can change their APIs without warning.
+
+\ifdefined\mainfile\else
+\end{document}
+\fi

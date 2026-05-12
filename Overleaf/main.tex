@@ -1,0 +1,173 @@
+\documentclass{article}
+\usepackage{subcaption}
+\usepackage{circuitikz}
+\usepackage{graphicx} % Required for inserting images
+\usepackage[absolute,overlay]{textpos}
+\usepackage{float} % H placement
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage[a4paper, left=2.5cm, right=2.5cm, top=2.5cm, bottom=2.5cm]{geometry}
+\usepackage{listings}           % Code listing support
+\usepackage{xcolor}             % Color for syntax highlighting
+\usepackage{tikz}
+\usetikzlibrary{automata, positioning, arrows, calc}
+\tikzset{
+    ->, 
+    >=stealth,
+    shorten >=2pt, shorten <=2pt,
+    node distance=2.8cm,
+    every state/.style={draw=blue!55,very thick,fill=blue!20},
+    initial text=$ $,
+}
+\usepackage[colorlinks=true,
+            linkcolor=black,
+            citecolor=blue,
+            urlcolor=blue]{hyperref}
+
+% C/Arduino listing style configuration
+\lstdefinestyle{cpp}{
+    language=C++,
+    basicstyle=\footnotesize\ttfamily,
+    keywordstyle=\color{blue}\bfseries,
+    commentstyle=\color{green!60!black}\itshape,
+    stringstyle=\color{red},
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    stepnumber=1,
+    numbersep=8pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    frame=single,
+    rulecolor=\color{black},
+    tabsize=4,
+    captionpos=b,
+    breaklines=true,
+    breakatwhitespace=false,
+}
+
+\title{IoT -- Smart Trash Bin}
+\author{Anders Falkesgaard (s245905), Andreas Jacobsen (s241123)
+\\Jonas Beck Jensen (s240324), Mads Rudolph (s246132)
+\\Sigurd Hestbech Christiansen (s245534), Tobias Nilsson (s233987)}
+\date{May 2026}
+
+\newcommand{\mainfile}{}
+\newcommand{\doubleunderline}[1]{\underline{\underline{#1}}}
+
+\begin{document}
+
+% ============================================================
+%  FRONT PAGE
+% ============================================================
+
+% Logo in top right
+\begin{textblock*}{3cm}(17.5cm,1cm)
+  \includegraphics[scale=0.5]{images/frontpage/dtu_logo.png}
+\end{textblock*}
+
+\maketitle
+
+\begin{center}
+     \textbf{Course 34315 -- IoT application and infrastructure implementation}
+\end{center}
+
+\vspace*{0cm}
+\begin{figure}
+    \vspace{-6cm}
+    \hspace{-2cm}
+    \includegraphics[width=1.0\linewidth]{images/frontpage/dtu_retning.png}
+    \label{fig:frontpage}
+\end{figure}
+
+% --- Row 1: Andreas, Jonas, Mads ---
+\begin{textblock*}{8cm}(2.5cm,9cm)
+    \fbox{\includegraphics[scale=0.5]{images/frontpage/dtu_andreas.png}}
+\end{textblock*}
+\begin{textblock*}{8cm}(2.5cm,12cm)
+    \textbf{Andreas}
+\end{textblock*}
+\begin{textblock*}{8cm}(2.5cm,12.4cm)
+    \textbf{s241123}
+\end{textblock*}
+
+\begin{textblock*}{8cm}(8.3cm,9cm)
+    \fbox{\includegraphics[scale=0.26]{images/frontpage/dtu_jonas.png}}
+\end{textblock*}
+\begin{textblock*}{8cm}(8.3cm,12cm)
+    \textbf{Jonas}
+\end{textblock*}
+\begin{textblock*}{8cm}(8.3cm,12.4cm)
+    \textbf{s240324}
+\end{textblock*}
+
+\begin{textblock*}{8cm}(14.1cm,9cm)
+    \fbox{\includegraphics[scale=0.23]{images/frontpage/dtu_mads.png}}
+\end{textblock*}
+\begin{textblock*}{8cm}(14.1cm,12cm)
+    \textbf{Mads}
+\end{textblock*}
+\begin{textblock*}{8cm}(14.1cm,12.4cm)
+    \textbf{s246132}
+\end{textblock*}
+
+% --- Row 2: Sigurd, Anders, Tobias ---
+\begin{textblock*}{8cm}(2.5cm,13cm)
+    \fbox{\includegraphics[scale=0.5]{images/frontpage/dtu_sigurd.png}}
+\end{textblock*}
+\begin{textblock*}{8cm}(2.5cm,16cm)
+    \textbf{Sigurd}
+\end{textblock*}
+\begin{textblock*}{8cm}(2.5cm,16.4cm)
+    \textbf{s245534}
+\end{textblock*}
+
+\begin{textblock*}{8cm}(8.3cm,13cm)
+    \fbox{\includegraphics[width=2.6cm]{images/frontpage/dtu_anders.png}}
+\end{textblock*}
+\begin{textblock*}{8cm}(8.3cm,16cm)
+    \textbf{Anders}
+\end{textblock*}
+\begin{textblock*}{8cm}(8.3cm,16.4cm)
+    \textbf{s245905}
+\end{textblock*}
+
+\begin{textblock*}{8cm}(14.1cm,13cm)
+    \fbox{\includegraphics[width=2.6cm]{images/frontpage/dtu_tobias.png}}
+\end{textblock*}
+\begin{textblock*}{8cm}(14.1cm,16cm)
+    \textbf{Tobias}
+\end{textblock*}
+\begin{textblock*}{8cm}(14.1cm,16.4cm)
+    \textbf{s233987}
+\end{textblock*}
+
+\vspace{9cm}
+\begin{center}
+     \textbf{\large Group 16}
+\end{center}
+
+% ============================================================
+%  CONTENTS
+% ============================================================
+\newpage
+\tableofcontents
+\newpage
+
+% ============================================================
+%  10-PAGE PROJECT BRIEF
+% ============================================================
+\input{sections/executive-summary}
+\input{sections/pain}
+\input{sections/solution}
+\input{sections/hardware-design}
+\input{sections/communication-technologies}
+\input{sections/software-design}
+\input{sections/data-presentation}
+\input{sections/testing}
+\input{sections/reflection}
+
+% The appendix lives in its own document: see appendix.tex
+% (compiles to a separate PDF, uploaded alongside this one on DTU LEARN).
+
+\end{document}

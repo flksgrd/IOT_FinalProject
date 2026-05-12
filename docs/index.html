@@ -1,128 +1,548 @@
 <!DOCTYPE html>
-<html lang="da">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#1e293b">
+  <meta name="theme-color" content="#f4ede1">
   <title>Smart Trash Bin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --paper:   #f4ede1;
+      --paper-2: #ffffff;
+      --ink:     #0a0a0a;
+      --accent:  #c9f31d;
+      --alert:   #ff3b1c;
+      --mute:    #6b6357;
+      --shadow:    6px 6px 0 var(--ink);
+      --shadow-sm: 4px 4px 0 var(--ink);
+    }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body { background: var(--paper); }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #0f172a;
-      color: #e2e8f0;
-      padding: 1.5rem;
+      font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: var(--ink);
+      padding: 1.25rem 1.25rem 6rem;
       min-height: 100vh;
       max-width: 480px;
       margin: 0 auto;
+      -webkit-font-smoothing: antialiased;
     }
-    h1 { font-size: 1.5rem; margin-bottom: 1.5rem; text-align: center; }
-    .stat {
-      background: #1e293b;
-      border-radius: 12px;
-      padding: 1.25rem;
-      margin-bottom: 0.75rem;
+
+    /* --- Header ----------------------------------------------------- */
+    .topbar {
       display: flex;
+      align-items: center;
       justify-content: space-between;
-      align-items: baseline;
+      gap: 0.75rem;
+      padding-bottom: 0.85rem;
+      margin-bottom: 1.25rem;
+      border-bottom: 4px solid var(--ink);
     }
-    .stat .label { color: #94a3b8; font-size: 0.95rem; }
-    .stat .value { font-size: 1.75rem; font-weight: 600; }
-    .stat .unit { color: #94a3b8; font-size: 0.95rem; margin-left: 0.25rem; }
-    .stat.bags .value { color: #22c55e; }
-    .stat.bags.low .value { color: #ef4444; }
-    .form {
-      background: #1e293b;
-      border-radius: 12px;
-      padding: 1.25rem;
-      margin-top: 1.5rem;
+    h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      font-size: 1.35rem;
+      line-height: 1;
+      letter-spacing: -0.02em;
+      text-transform: uppercase;
     }
-    .form label { display: block; color: #94a3b8; margin-bottom: 0.5rem; }
-    .form-row { display: flex; gap: 0.5rem; }
-    input[type="number"] {
-      flex: 1;
-      padding: 0.75rem;
-      background: #0f172a;
-      border: 1px solid #334155;
-      border-radius: 8px;
-      color: #e2e8f0;
-      font-size: 1.1rem;
+    .status-pill {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 0.65rem;
+      letter-spacing: 0.08em;
+      color: var(--ink);
+      background: var(--accent);
+      padding: 0.3rem 0.45rem;
+      border: 2px solid var(--ink);
+      box-shadow: 2px 2px 0 var(--ink);
+      white-space: nowrap;
+    }
+    .status-pill.off {
+      background: var(--alert);
+      color: var(--paper-2);
+    }
+
+    /* --- Cards ------------------------------------------------------ */
+    .card {
+      background: var(--paper-2);
+      border: 3px solid var(--ink);
+      box-shadow: var(--shadow);
+      padding: 1.1rem 1rem;
+      margin-bottom: 1.4rem;
+      position: relative;
+    }
+    .card-label {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--ink);
+      margin-bottom: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+    }
+    .card-label::before {
+      content: '';
+      width: 14px;
+      height: 14px;
+      background: var(--ink);
+      flex-shrink: 0;
+    }
+
+    /* --- Hero: bin fill -------------------------------------------- */
+    .bin-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1.4rem;
+      padding: 0.4rem 0 0.2rem;
+    }
+    .bin-svg {
+      width: 130px;
+      height: auto;
+      flex-shrink: 0;
+    }
+    .bin-readout {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
       min-width: 0;
     }
-    input[type="number"]:focus { outline: none; border-color: #3b82f6; }
-    button {
-      padding: 0.75rem 1.5rem;
-      background: #3b82f6;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
+    .bin-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 3.2rem;
+      line-height: 0.95;
+      color: var(--ink);
+      letter-spacing: -0.04em;
     }
-    button:active { background: #2563eb; }
-    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .bin-unit {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--ink);
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      margin-top: 0.4rem;
+      padding: 0.15rem 0.45rem;
+      background: var(--accent);
+      border: 2px solid var(--ink);
+    }
+    .bin-card.full .bin-unit {
+      background: var(--alert);
+      color: var(--paper-2);
+    }
+
+    /* --- Bags card -------------------------------------------------- */
+    .bags-card { overflow: hidden; }
+    .bags-readout {
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+      margin-bottom: 0.9rem;
+    }
+    .bags-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 3rem;
+      line-height: 1;
+      color: var(--ink);
+      letter-spacing: -0.04em;
+    }
+    .bags-low-chip {
+      display: none;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 0.7rem;
+      letter-spacing: 0.14em;
+      color: var(--paper-2);
+      background: var(--alert);
+      padding: 0.25rem 0.55rem;
+      border: 2px solid var(--ink);
+      box-shadow: 2px 2px 0 var(--ink);
+    }
+    .bags-card.low .bags-num { color: var(--alert); }
+    .bags-card.low .bags-low-chip { display: inline-block; }
+    .bags-card.low::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 8px;
+      background: repeating-linear-gradient(
+        45deg,
+        var(--alert) 0 8px,
+        var(--ink) 8px 16px
+      );
+    }
+    .bag-icons {
+      display: flex;
+      gap: 0.25rem;
+      align-items: flex-end;
+      flex-wrap: nowrap;
+    }
+    .bag-icon {
+      width: 22px;
+      height: 26px;
+      color: var(--mute);
+      opacity: 0.22;
+      flex-shrink: 0;
+      transition: color 0.2s, opacity 0.2s;
+    }
+    .bag-icon.filled {
+      color: var(--ink);
+      opacity: 1;
+    }
+    .bags-card.low .bag-icon.filled { color: var(--alert); }
+    .bag-overflow {
+      display: none;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 0.9rem;
+      margin-left: 0.5rem;
+      color: var(--ink);
+      align-self: center;
+    }
+
+    /* --- State machine --------------------------------------------- */
+    .states-viz {
+      position: relative;
+      padding: 0.4rem 0 0.2rem;
+    }
+    .states-track {
+      position: absolute;
+      top: calc(0.4rem + 14px);
+      left: 12.5%;
+      right: 12.5%;
+      height: 3px;
+      background: var(--ink);
+      z-index: 0;
+    }
+    .states-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      position: relative;
+      z-index: 1;
+    }
+    .state-step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1 1 0;
+      min-width: 0;
+      gap: 0.55rem;
+    }
+    .state-dot {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--paper-2);
+      border: 3px solid var(--ink);
+      transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+    }
+    .state-name {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 0.62rem;
+      letter-spacing: 0.05em;
+      color: var(--mute);
+      text-align: center;
+      white-space: nowrap;
+      transition: color 0.2s, font-size 0.2s;
+    }
+    .states-viz[data-state="0"] .state-step[data-idx="0"] .state-dot,
+    .states-viz[data-state="1"] .state-step[data-idx="1"] .state-dot,
+    .states-viz[data-state="2"] .state-step[data-idx="2"] .state-dot {
+      background: var(--accent);
+      transform: scale(1.18);
+      box-shadow: 2px 2px 0 var(--ink);
+    }
+    .states-viz[data-state="0"] .state-step[data-idx="0"] .state-name,
+    .states-viz[data-state="1"] .state-step[data-idx="1"] .state-name,
+    .states-viz[data-state="2"] .state-step[data-idx="2"] .state-name,
+    .states-viz[data-state="3"] .state-step[data-idx="3"] .state-name {
+      color: var(--ink);
+      font-size: 0.7rem;
+    }
+    .states-viz[data-state="3"] .state-step[data-idx="3"] .state-dot {
+      background: var(--alert);
+      transform: scale(1.25);
+      box-shadow: 2px 2px 0 var(--ink);
+      animation: pulseAlert 1.4s ease-in-out infinite;
+    }
+    .states-viz[data-state="3"] .state-step[data-idx="3"] .state-name {
+      color: var(--alert);
+    }
+    @keyframes pulseAlert {
+      0%, 100% { box-shadow: 2px 2px 0 var(--ink), 0 0 0 0 rgba(255, 59, 28, 0.45); }
+      50%      { box-shadow: 2px 2px 0 var(--ink), 0 0 0 10px rgba(255, 59, 28, 0); }
+    }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    /* --- Temperature card (slim) ----------------------------------- */
+    .temp-card { padding: 0.7rem 1rem; }
+    .temp-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    .temp-card .card-label { margin-bottom: 0; }
+    .temp-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 1.5rem;
+      line-height: 1;
+      color: var(--ink);
+      letter-spacing: -0.02em;
+      font-variant-numeric: tabular-nums;
+      display: inline-flex;
+      align-items: baseline;
+      gap: 0.15rem;
+      transition: color 0.25s;
+    }
+    .temp-deg {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      font-size: 0.8rem;
+      letter-spacing: 0.1em;
+      color: var(--mute);
+      text-transform: uppercase;
+    }
+    .temp-card.hot .temp-value { color: var(--alert); }
+    .temp-card.hot .temp-deg   { color: var(--alert); }
+
+    /* --- Form ------------------------------------------------------- */
+    .form-row { display: flex; gap: 0.6rem; }
+    input[type="number"] {
+      flex: 1;
+      min-width: 0;
+      padding: 0.7rem 0.85rem;
+      background: var(--paper);
+      border: 3px solid var(--ink);
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: var(--ink);
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.1s, box-shadow 0.1s, background 0.15s;
+      -moz-appearance: textfield;
+    }
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none; margin: 0;
+    }
+    input[type="number"]:focus {
+      outline: none;
+      background: var(--paper-2);
+    }
+    input[type="number"]::placeholder {
+      color: var(--mute);
+      font-weight: 400;
+      opacity: 0.7;
+    }
+    button {
+      padding: 0.7rem 1.3rem;
+      background: var(--ink);
+      color: var(--accent);
+      border: 3px solid var(--ink);
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      cursor: pointer;
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.08s, box-shadow 0.08s;
+      white-space: nowrap;
+    }
+    button:hover {
+      transform: translate(-1px, -1px);
+      box-shadow: 5px 5px 0 var(--ink);
+    }
+    button:active {
+      transform: translate(3px, 3px);
+      box-shadow: 1px 1px 0 var(--ink);
+    }
+    button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* --- Footer ----------------------------------------------------- */
+    .footer {
+      text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.05em;
+      color: var(--mute);
+      margin-top: 1.5rem;
+      padding-top: 0.85rem;
+      border-top: 2px dashed var(--ink);
+    }
+
+    /* --- Toast ------------------------------------------------------ */
     .toast {
       position: fixed;
       bottom: 1.5rem;
       left: 50%;
-      transform: translateX(-50%) translateY(120px);
-      background: #22c55e;
-      color: white;
-      padding: 0.75rem 1.25rem;
-      border-radius: 8px;
-      transition: transform 0.3s ease;
-      font-weight: 500;
+      transform: translateX(-50%) translateY(160%);
+      background: var(--ink);
+      color: var(--accent);
+      padding: 0.8rem 1.2rem;
+      border: 3px solid var(--ink);
+      border-top-width: 7px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      box-shadow: var(--shadow);
+      transition: transform 0.28s ease;
+      max-width: 90%;
+      text-align: center;
     }
     .toast.show { transform: translateX(-50%) translateY(0); }
-    .toast.error { background: #ef4444; }
-    .footer {
-      text-align: center;
-      color: #64748b;
-      font-size: 0.85rem;
-      margin-top: 1.5rem;
+    .toast.error {
+      color: var(--alert);
+      border-top-color: var(--alert);
+    }
+
+    /* --- Small viewports ------------------------------------------- */
+    @media (max-width: 360px) {
+      body { padding: 1rem 1rem 5rem; }
+      h1 { font-size: 1.15rem; }
+      .bin-num { font-size: 2.6rem; }
+      .bags-num { font-size: 2.5rem; }
+      .temp-value { font-size: 1.3rem; }
+      .bin-svg { width: 110px; }
+      .bag-icon { width: 19px; height: 23px; }
+      .state-name { font-size: 0.55rem; }
     }
   </style>
 </head>
 <body>
-  <h1>🗑️ Smart Trash Bin</h1>
 
-  <div class="stat bags" id="bagsStat">
-    <span class="label">Poser tilbage</span>
-    <span><span class="value" id="bags">--</span></span>
-  </div>
+  <header class="topbar">
+    <h1>🗑️ Smart Trash Bin</h1>
+    <span class="status-pill" id="statusPill">[ONLINE]</span>
+  </header>
 
-  <div class="stat">
-    <span class="label">Afstand</span>
-    <span><span class="value" id="dist">--</span><span class="unit"> cm</span></span>
-  </div>
-
-  <div class="stat">
-    <span class="label">Temperatur</span>
-    <span><span class="value" id="temp">--</span><span class="unit"> °C</span></span>
-  </div>
-
-  <div class="stat">
-    <span class="label">Fugtighed</span>
-    <span><span class="value" id="hum">--</span><span class="unit"> %</span></span>
-  </div>
-
-  <div class="stat">
-    <span class="label">Tilstand</span>
-    <span class="value" id="state">--</span>
-  </div>
-
-  <div class="form">
-    <label for="newBags">Sæt antal poser</label>
-    <div class="form-row">
-      <input type="number" id="newBags" min="0" max="999" placeholder="f.eks. 15" inputmode="numeric">
-      <button id="setBtn">Gem</button>
+  <section class="card bin-card" id="binCard">
+    <div class="card-label">Distance</div>
+    <div class="bin-wrap">
+      <svg class="bin-svg" viewBox="0 0 120 170" aria-hidden="true">
+        <defs>
+          <clipPath id="binInside">
+            <polygon points="22,32 98,32 91,148 29,148"/>
+          </clipPath>
+          <pattern id="hazardPattern" patternUnits="userSpaceOnUse" width="14" height="14" patternTransform="rotate(45)">
+            <rect width="7" height="14" fill="#ff3b1c"/>
+            <rect x="7" width="7" height="14" fill="#0a0a0a"/>
+          </pattern>
+        </defs>
+        <!-- handle on lid -->
+        <rect x="55" y="6" width="10" height="6" fill="#0a0a0a"/>
+        <!-- lid bar -->
+        <rect x="12" y="14" width="96" height="14" fill="#0a0a0a"/>
+        <!-- bin body white background -->
+        <polygon points="22,32 98,32 91,148 29,148" fill="#ffffff"/>
+        <!-- fill (clipped to interior) -->
+        <g clip-path="url(#binInside)">
+          <rect id="fillBar" x="20" y="148" width="84" height="0" fill="#c9f31d"/>
+        </g>
+        <!-- bin outline -->
+        <polygon points="22,32 98,32 91,148 29,148" fill="none" stroke="#0a0a0a" stroke-width="3" stroke-linejoin="round"/>
+        <!-- ribs -->
+        <line x1="42" y1="36" x2="38" y2="146" stroke="#0a0a0a" stroke-width="1.5" opacity="0.32"/>
+        <line x1="60" y1="36" x2="60" y2="146" stroke="#0a0a0a" stroke-width="1.5" opacity="0.32"/>
+        <line x1="78" y1="36" x2="82" y2="146" stroke="#0a0a0a" stroke-width="1.5" opacity="0.32"/>
+        <!-- base shadow -->
+        <rect x="26" y="150" width="68" height="6" fill="#0a0a0a"/>
+      </svg>
+      <div class="bin-readout">
+        <div class="bin-num"><span id="dist">--</span></div>
+        <div class="bin-unit">cm</div>
+      </div>
     </div>
-  </div>
+  </section>
 
-  <div class="footer">
-    <span id="lastUpdate">Henter…</span>
-  </div>
+  <section class="card bags-card" id="bagsStat">
+    <div class="card-label">Bags remaining</div>
+    <div class="bags-readout">
+      <span class="bags-num" id="bags">--</span>
+      <span class="bags-low-chip">LOW</span>
+    </div>
+    <div class="bag-icons-wrap">
+      <div class="bag-icons" id="bagIcons" aria-hidden="true"></div>
+      <span class="bag-overflow" id="bagOverflow"></span>
+    </div>
+  </section>
+
+  <section class="card temp-card" id="tempCard">
+    <div class="temp-row">
+      <div class="card-label">Temperature</div>
+      <div class="temp-value"><span id="temp">--</span><span class="temp-deg">°C</span></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-label">State</div>
+    <div class="states-viz" id="statesViz">
+      <div class="states-track"></div>
+      <div class="states-row">
+        <div class="state-step" data-idx="0">
+          <div class="state-dot"></div>
+          <div class="state-name">LOAD</div>
+        </div>
+        <div class="state-step" data-idx="1">
+          <div class="state-dot"></div>
+          <div class="state-name">CHECK</div>
+        </div>
+        <div class="state-step" data-idx="2">
+          <div class="state-dot"></div>
+          <div class="state-name">CLOSE</div>
+        </div>
+        <div class="state-step" data-idx="3">
+          <div class="state-dot"></div>
+          <div class="state-name">EMPTY_ME</div>
+        </div>
+      </div>
+      <span id="state" class="sr-only">--</span>
+    </div>
+  </section>
+
+  <section class="card form-card">
+    <label class="card-label" for="newBags">Set bag count</label>
+    <div class="form-row">
+      <input type="number" id="newBags" min="0" max="999" placeholder="e.g. 15" inputmode="numeric">
+      <button id="setBtn">Save</button>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <span id="lastUpdate">Loading…</span>
+  </footer>
 
   <div class="toast" id="toast"></div>
 
@@ -132,6 +552,10 @@
     const WRITE_KEY = 'DAFOBTGX2VWN91LU';
     const LOW_THRESHOLD = 3;
     const REFRESH_MS = 5000;
+    const STALE_MS = 90 * 1000;
+    const BIN_DEPTH_CM = 30;
+    const BAG_ICON_COUNT = 10;
+    const TEMP_HOT_C = 30;   // °C threshold that flips the temp card to alert styling
 
     const STATE_NAMES = ['LOAD', 'CHECK', 'CLOSE', 'EMPTY_ME'];
 
@@ -143,36 +567,102 @@
       setTimeout(() => t.classList.remove('show'), 2500);
     }
 
+    function setStatus(online) {
+      const p = document.getElementById('statusPill');
+      p.textContent = online ? '[ONLINE]' : '[OFFLINE]';
+      p.classList.toggle('off', !online);
+    }
+
+    function buildBagIcons() {
+      const row = document.getElementById('bagIcons');
+      const svg = `<svg class="bag-icon" viewBox="0 0 24 28" xmlns="http://www.w3.org/2000/svg">
+        <path d="M9 7.5 Q9 3.5 12 3.5 Q15 3.5 15 7.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M5 7.5 H19 L21.5 26 H2.5 Z" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/>
+      </svg>`;
+      row.innerHTML = svg.repeat(BAG_ICON_COUNT);
+    }
+
+    function renderBagIcons(count) {
+      const row = document.getElementById('bagIcons');
+      const overflow = document.getElementById('bagOverflow');
+      const filled = Math.max(0, Math.min(count, BAG_ICON_COUNT));
+      Array.from(row.children).forEach((el, i) => {
+        el.classList.toggle('filled', i < filled);
+      });
+      if (count > BAG_ICON_COUNT) {
+        overflow.textContent = `+${count - BAG_ICON_COUNT}`;
+        overflow.style.display = 'inline-block';
+      } else {
+        overflow.style.display = 'none';
+      }
+    }
+
+    function renderTemp(temp) {
+      const card = document.getElementById('tempCard');
+      card.classList.toggle('hot', temp != null && !isNaN(temp) && temp >= TEMP_HOT_C);
+    }
+
+    function renderFill(dist) {
+      const fillBar = document.getElementById('fillBar');
+      const card = document.getElementById('binCard');
+      let pct = 0;
+      if (dist != null && !isNaN(dist)) {
+        pct = Math.max(0, Math.min(100, (BIN_DEPTH_CM - dist) / BIN_DEPTH_CM * 100));
+      }
+      const innerTop = 32, innerBottom = 148;
+      const innerH = innerBottom - innerTop;
+      const h = innerH * pct / 100;
+      fillBar.setAttribute('y', innerBottom - h);
+      fillBar.setAttribute('height', h);
+      const isFull = pct >= 80;
+      fillBar.setAttribute('fill', isFull ? 'url(#hazardPattern)' : '#c9f31d');
+      card.classList.toggle('full', isFull);
+    }
+
     async function refresh() {
       try {
-        const url = `https://api.thingspeak.com/channels/${CHANNEL}/feeds.json?api_key=${READ_KEY}&results=1`;
+        const url = `https://api.thingspeak.com/channels/${CHANNEL}/feeds.json?api_key=${READ_KEY}&results=10`;
         const r = await fetch(url, { cache: 'no-store' });
         const j = await r.json();
-        const f = (j.feeds || [])[0];
+        const feeds = j.feeds || [];
+        // Dashboard writes (field5 only) leave field1/2/3 null. Find the most
+        // recent entry that actually contains ESP sensor data.
+        const f = feeds.slice().reverse().find(x => x && x.field1 != null);
         if (!f) {
-          document.getElementById('lastUpdate').textContent = 'Ingen data endnu';
+          document.getElementById('lastUpdate').textContent = 'No data yet';
+          setStatus(false);
           return;
         }
 
         const bags = parseInt(f.field2, 10);
         document.getElementById('bags').textContent = isNaN(bags) ? '--' : bags;
         document.getElementById('bagsStat').classList.toggle('low', !isNaN(bags) && bags <= LOW_THRESHOLD);
+        renderBagIcons(isNaN(bags) ? 0 : bags);
 
         const dist = parseFloat(f.field1);
         document.getElementById('dist').textContent = isNaN(dist) ? '--' : dist.toFixed(1);
+        renderFill(isNaN(dist) ? null : dist);
 
         const temp = parseFloat(f.field6);
         document.getElementById('temp').textContent = isNaN(temp) ? '--' : temp.toFixed(1);
-        const hum = parseFloat(f.field7);
-        document.getElementById('hum').textContent = isNaN(hum) ? '--' : hum.toFixed(0);
+        renderTemp(isNaN(temp) ? null : temp);
 
         const stateIdx = parseInt(f.field3, 10);
         document.getElementById('state').textContent = STATE_NAMES[stateIdx] || '--';
+        const sv = document.getElementById('statesViz');
+        if (Number.isInteger(stateIdx) && stateIdx >= 0 && stateIdx < STATE_NAMES.length) {
+          sv.setAttribute('data-state', String(stateIdx));
+        } else {
+          sv.removeAttribute('data-state');
+        }
 
         const ts = new Date(f.created_at);
-        document.getElementById('lastUpdate').textContent = `Sidst opdateret: ${ts.toLocaleTimeString('da-DK')}`;
+        document.getElementById('lastUpdate').textContent = `Last updated: ${ts.toLocaleTimeString('en-GB')}`;
+        const age = Date.now() - ts.getTime();
+        setStatus(!isNaN(age) && age <= STALE_MS);
       } catch (e) {
-        document.getElementById('lastUpdate').textContent = 'Kunne ikke kontakte ThingSpeak';
+        document.getElementById('lastUpdate').textContent = 'Could not reach ThingSpeak';
+        setStatus(false);
       }
     }
 
@@ -180,26 +670,26 @@
       const inp = document.getElementById('newBags');
       const btn = document.getElementById('setBtn');
       const n = parseInt(inp.value, 10);
-      if (isNaN(n) || n < 0) { showToast('Ugyldigt tal', true); return; }
+      if (isNaN(n) || n < 0) { showToast('Invalid number', true); return; }
 
       btn.disabled = true;
-      btn.textContent = 'Sender…';
+      btn.textContent = 'Sending…';
       try {
         const url = `https://api.thingspeak.com/update?api_key=${WRITE_KEY}&field5=${n}`;
         const r = await fetch(url);
         const txt = (await r.text()).trim();
         if (txt === '0') {
-          showToast('ThingSpeak afviste – vent 15s og prøv igen', true);
+          showToast('ThingSpeak rejected – wait 15s and try again', true);
         } else {
-          showToast(`Sat til ${n} poser – ESP henter om <30s`);
+          showToast(`Set to ${n} bags – ESP fetches in <30s`);
           inp.value = '';
           setTimeout(refresh, 35000);
         }
       } catch (e) {
-        showToast('Netværksfejl', true);
+        showToast('Network error', true);
       } finally {
         btn.disabled = false;
-        btn.textContent = 'Gem';
+        btn.textContent = 'Save';
       }
     }
 
@@ -208,6 +698,7 @@
       if (e.key === 'Enter') setBags();
     });
 
+    buildBagIcons();
     refresh();
     setInterval(refresh, REFRESH_MS);
   </script>

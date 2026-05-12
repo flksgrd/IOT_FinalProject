@@ -1,0 +1,25 @@
+\ifdefined\mainfile\else
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage[a4paper, left=2.5cm, right=2.5cm, top=2.5cm, bottom=2.5cm]{geometry}
+\usepackage[colorlinks=true,linkcolor=black,citecolor=blue,urlcolor=blue]{hyperref}
+\begin{document}
+\fi
+
+\section{Executive summary}
+\label{sec:executive-summary}
+
+This project presents the design and construction of a smart, self‑closing trash bin with logging and administrative features. The system automates the sealing of trash bags while collecting and displaying usage data, aiming to reduce the everyday issues of overflowing kitchen bins and forgotten bag inventory.
+\\ \\
+\noindent
+A scaled‑down prototype was developed at a 1:2 scale and integrates both hardware and software components typical of an IoT system. The physical solution includes an automated bag‑closing mechanism driven by electric motors and controlled by an ESP8266, supported by sensors for monitoring trash level and system state. An on‑device display provides the user with status information and system feedback.
+\\ \\
+\noindent
+In addition, a web application was developed to log data related to remaining trash bags and to present real‑time information, such as how full the current trash bag is. Overall, the project demonstrates how IoT technology can combine physical automation with cloud‑based data logging and user‑friendly monitoring.
+
+\ifdefined\mainfile\else
+\end{document}
+\fi

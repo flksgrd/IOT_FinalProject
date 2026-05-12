@@ -1,0 +1,27 @@
+\ifdefined\mainfile\else
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage[a4paper, left=2.5cm, right=2.5cm, top=2.5cm, bottom=2.5cm]{geometry}
+\usepackage[colorlinks=true,linkcolor=black,citecolor=blue,urlcolor=blue]{hyperref}
+\begin{document}
+\fi
+
+\section{Testing and results}
+\label{sec:testing}
+
+The system was tested at three levels: individual components, the device-side firmware, and the full end-to-end pipeline, with tests repeated across multiple lab sessions to catch intermittent failures.
+\\ \\
+At the component level the HC-SR04 was checked against a measuring tape from 5\,cm to 40\,cm and agreed within $\pm$1\,cm across that range (below \textasciitilde 3\,cm it saturates and is excluded from the firmware's decision logic), the LM35 was compared with an external digital thermometer at room temperature and in warm water and reached a steady-state error within $\pm$1\,\textdegree C after the ADC reference was calibrated to 2.667\,V and the IIR filter was added, the stepper closure was tested across $>$20 attempts and the dual-motor design closed the bag reliably where the single-motor design occasionally let it twist, and the OLED was verified on the I\textsuperscript{2}C bus on D1/D2 once stepper coil IN4 was moved off D1.
+\\ \\
+At the firmware level the state machine was exercised by manually triggering each transition: pressing reset after fitting a bag took the system from \textsc{load} to \textsc{check} and decremented the bag counter; covering the sensor at $<$10\,cm took it from \textsc{check} to \textsc{close} and raised field 4 on ThingSpeak; the motors then stopped after the fixed step count, the OLED prompted to replace the bag, and the reset button returned the system to \textsc{load}. A forced out-of-range reading also correctly took the firmware into the \textsc{help} error state. All five transitions passed.
+\\ \\
+At the pipeline level the full chain was run continuously for multi-hour sessions across several lab days. ESP pushes appeared on the dashboard within 5--16\,s, a new bag count entered on the dashboard reached the ESP within the predicted 50\,s worst case, bag-full and low-bags events arrived as phone notifications within \textasciitilde 30\,s, and the ONLINE/OFFLINE pill flipped to OFFLINE within \textasciitilde 90\,s of unplugging the ESP. All measured latencies matched the theoretical worst case derived from ThingSpeak's free-tier rate limits.
+\\ \\
+The system has known limitations that we did not address. HTTP traffic to ThingSpeak is unencrypted (acceptable for non-sensitive telemetry but not for production); the WiFi credentials are hard-coded in the firmware (a real product would use a captive-portal provisioning flow); the 15\,s minimum between ThingSpeak writes is fine for one bin in a kitchen but would be a problem for a commercial multi-bin deployment; and the bin-full threshold is fixed at 10\,cm rather than calibrated to the bin's geometry. Natural next steps would be to swap ThingSpeak for a self-hosted MQTT broker with TLS, add a battery and a deep-sleep mode so the bin no longer needs a USB cable, replace the LM35 with a combined humidity/gas sensor to warn about spoiling organic waste, ship a small mobile app instead of leaning on IFTTT, and add a fleet view for households with multiple bins.
+
+\ifdefined\mainfile\else
+\end{document}
+\fi

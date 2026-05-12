@@ -1,0 +1,62 @@
+\ifdefined\mainfile\else
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage[a4paper, left=2.5cm, right=2.5cm, top=2.5cm, bottom=2.5cm]{geometry}
+\usepackage[colorlinks=true,linkcolor=black,citecolor=blue,urlcolor=blue]{hyperref}
+\begin{document}
+\fi
+
+\section{Hardware design}
+\label{sec:hardware}
+
+The brain of the bin is an \textbf{ESP8266 NodeMCU} module -- a small, cheap microcontroller board with built-in WiFi, programmed from the Arduino IDE. For our project the ESP8266 was the natural trade-off: cheap (\textasciitilde 30\,DKK), small enough to mount inside the bin lid, fast enough to drive the closure mechanism while still talking to the cloud, and natively WiFi-enabled so we do not need an external radio module. It was not, however, the ideal candidate: the ESP8266 only exposes a handful of usable GPIO pins and several of those have boot-time roles, which made the pin layout one of the recurring headaches of the project.
+\\ \\
+Around the ESP we built up the rest of the hardware listed in Table~\ref{tab:components}. The selection satisfies the course's component requirements -- one analog sensor (LM35), one digital sensor (HC-SR04), one form of actuation (the steppers) and an on-device display (the OLED).
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{l|l|l}
+        \textbf{Component} & \textbf{Role} & \textbf{Type} \\
+        \hline
+        ESP8266 NodeMCU                 & WiFi MCU                & Microcontroller \\
+        HC-SR04 ultrasonic sensor       & Fill level measurement  & \textbf{Digital} sensor \\
+        LM35 temperature sensor         & Temperature measurement & \textbf{Analog} sensor \\
+        28BYJ-48 stepper motor (x2)     & Bag closure mechanism   & \textbf{Actuator} \\
+        ULN2003 driver board (x2)       & Stepper coil driver     & Driver \\
+        SSD1306 OLED display (I\textsuperscript{2}C, 0.96\textquotedbl) & Local status display & Display \\
+        Push button                     & User reset              & Input \\
+    \end{tabular}
+    \caption{Components used in the Smart Trash Bin}
+    \label{tab:components}
+\end{table}
+
+Power is supplied over USB at 5\,V. The ESP8266 runs from its onboard 3.3\,V regulator, while the stepper drivers and the OLED share the 5\,V rail. The HC-SR04 outputs 5\,V on its Echo line, so it is divided down with a 1\,k$\Omega$/2\,k$\Omega$ resistor pair before reaching a 3.3\,V-only GPIO. The full pinout is listed in Table~\ref{tab:pinout}, and a larger circuit diagram is reproduced in the appendix.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{l|l|l}
+        \textbf{Component} & \textbf{ESP8266 pin} & \textbf{Note} \\
+        \hline
+        HC-SR04 Trig     & D5  & digital output \\
+        HC-SR04 Echo     & D6  & digital input (1k/2k divider) \\
+        ULN2003 IN1      & D8  & stepper coil 1 \\
+        ULN2003 IN2      & D7  & stepper coil 2 \\
+        ULN2003 IN3      & D2  & stepper coil 3 (shared with I\textsuperscript{2}C SDA) \\
+        ULN2003 IN4      & D0  & stepper coil 4 (moved from D1 to free SCL) \\
+        SSD1306 SDA      & D2  & I\textsuperscript{2}C data \\
+        SSD1306 SCL      & D1  & I\textsuperscript{2}C clock \\
+        LM35 Vout        & A0  & analog input, 10-bit ADC \\
+        Reset button     & D3  & digital input, internal pull-up \\
+    \end{tabular}
+    \caption{Pinout for the ESP8266 module}
+    \label{tab:pinout}
+\end{table}
+
+The chassis itself was modelled in CAD and 3D-printed in PLA, iterating through several prototypes. The final version uses two 28BYJ-48 steppers mounted on either side of the lid, each pulling its own plastic string attached to the bag opening. The dual-motor design distributes the closing force evenly and avoids the bag twisting on itself, which was a recurring failure mode of the single-motor prototype.
+
+\ifdefined\mainfile\else
+\end{document}
+\fi
