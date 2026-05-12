@@ -12,15 +12,13 @@
 \section{Communication technologies}
 \label{sec:comms}
 
-\subsection{WiFi (IEEE 802.11 b/g/n)}
+\subsection{WiFi}
 \label{sec:wifi}
 
-The bin connects to the home network over standard 2.4\,GHz WiFi, exposed by the ESP8266's built-in radio. WiFi uses CSMA/CA channel access on the unlicensed ISM band and provides per-link symmetric encryption (WPA2/WPA3). At link level the ESP8266 supports raw data rates from 1\,Mb/s up to 72.2\,Mb/s; in practice the limiting factor for our use case is the cloud round-trip, not the air link.
+The bin connects to the home network over standard 2.4\,GHz WiFi using the ESP8266's built-in radio. We chose WiFi over alternatives like Bluetooth or LoRaWAN because almost every household already has a router, so the bin is plug-and-play, and because WiFi gives the device direct access to the internet -- we can talk straight to ThingSpeak without needing a separate gateway.
 
-We chose WiFi (rather than e.g. BLE, LoRaWAN or Zigbee) for three reasons. First, the course explicitly requires it. Second, every household with a kitchen already has WiFi infrastructure, so the bin is plug-and-play. Third, WiFi is high-bandwidth and IP-routable, which means we can talk directly to any HTTP endpoint on the public internet (ThingSpeak) without needing a gateway.
-
-\textbf{Pros.} Ubiquitous in homes; no extra gateway needed; high bandwidth; native IP stack so we can use ordinary HTTP REST calls.\\
-\textbf{Cons.} Higher power consumption than BLE/LoRa, especially while the radio is active; depends on the user's home AP being reachable; 2.4\,GHz band can be noisy (microwaves, neighbours' APs).
+\textbf{Pros.} Already present in most homes; no extra hardware needed; fast enough that the cloud round-trip is the bottleneck, not the radio.\\
+\textbf{Cons.} Uses more power than low-power radios like Bluetooth; the bin stops working if the home WiFi is down.
 
 \subsection{HTTP REST over the public internet}
 \label{sec:http}
