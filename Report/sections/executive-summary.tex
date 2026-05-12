@@ -1,0 +1,21 @@
+\ifdefined\mainfile\else
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage[a4paper, left=2.5cm, right=2.5cm, top=2.5cm, bottom=2.5cm]{geometry}
+\usepackage[colorlinks=true,linkcolor=black,citecolor=blue,urlcolor=blue]{hyperref}
+\begin{document}
+\fi
+
+\section{Executive summary}
+\label{sec:executive-summary}
+
+We have designed, built and tested a connected \textbf{Smart Trash Bin} that automatically closes the bag when it is full, keeps track of how many bags are left in the household, and pushes a notification to the user's phone when it is time to replace the bag. The product targets the everyday pain of overflowing kitchen bins and forgotten bag inventory, and is built around an ESP8266 NodeMCU, an ultrasonic distance sensor, an LM35 temperature sensor, two stepper motors driving a string-closure mechanism, an OLED status display and a small reset button.
+
+The connected side of the product is built on a free-tier IoT stack: ThingSpeak as the cloud database, IFTTT for phone push notifications and Netlify for hosting the static web dashboard at \url{https://dtutrash.netlify.app/}. The ESP8266 and the user never talk to each other directly -- ThingSpeak is the only message broker, and both sides read from and write to the same numbered fields. The end-to-end pipeline meets the course requirements (WiFi, one analog and one digital sensor, actuation, web dashboard, on-device display) and demonstrates how a low-cost embedded device can be turned into a service that an end customer can actually use.
+
+\ifdefined\mainfile\else
+\end{document}
+\fi

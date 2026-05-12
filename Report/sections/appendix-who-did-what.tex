@@ -1,0 +1,66 @@
+\ifdefined\mainfile\else
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage[a4paper, left=2.5cm, right=2.5cm, top=2.5cm, bottom=2.5cm]{geometry}
+\usepackage[colorlinks=true,linkcolor=black,citecolor=blue,urlcolor=blue]{hyperref}
+\begin{document}
+\fi
+
+\section{Appendix -- Who did what}
+\label{sec:appendix-who}
+
+The table below summarises module ownership during the project. The "share" column gives an approximate percentage distribution of effort per group member across the project as a whole (estimated jointly by the group at the end of the project; the total is 100\%).
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{l|l|l}
+        \textbf{Module} & \textbf{Owner(s)} & \textbf{Notes} \\
+        \hline
+        Mechanical / CAD design                  & Sigurd, Anders              & 3D-printed prototypes \\
+        Motor + sensor integration               & Jonas, Tobias, Andreas      & ULN2003, HC-SR04 \\
+        Firmware (state machine, ESP8266)        & Mads                        & sketch\_apr16a.ino \\
+        ThingSpeak + IFTTT integration           & Mads                        & React rules, applets \\
+        Web dashboard                            & Anders                      & docs/index.html \\
+        OLED + LM35 (display, temperature)       & Anders                      & SSD1306 I\textsuperscript{2}C, IIR filter \\
+        Report                                   & All                         & 17 May \\
+    \end{tabular}
+    \caption{Module ownership}
+    \label{tab:modulansvar}
+\end{table}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{l|c|c}
+        \textbf{Name} & \textbf{Student no.} & \textbf{Share of effort} \\
+        \hline
+        Anders Falkesgaard            & s245905 & 17\% \\
+        Andreas Jacobsen              & s241123 & 17\% \\
+        Jonas Beck Jensen             & s240324 & 17\% \\
+        Mads Rudolph                  & s246132 & 17\% \\
+        Sigurd Hestbech Christiansen  & s245534 & 17\% \\
+        Tobias Nilsson                & s233987 & 15\% \\
+        \hline
+        \textbf{Total}                &         & \textbf{100\%}\\
+    \end{tabular}
+    \caption{Approximate percentage distribution of effort per group member}
+    \label{tab:tidsforbrug}
+\end{table}
+
+\subsection*{Appendix contents}
+
+The remaining appendix items required by the course are uploaded to DTU LEARN alongside this PDF, not inlined here:
+
+\begin{itemize}
+    \item \textbf{Log book} -- sessions 1--6, located in the project repository under \texttt{Log book/}.
+    \item \textbf{Group contract} -- signed in session 1.
+    \item \textbf{Self-evaluation} -- per group and per individual.
+    \item \textbf{Videos and photos} of the working bin (recorded on 7 May, before equipment was returned).
+    \item \textbf{Full source code} -- Arduino firmware (\texttt{sketch\_apr16a.ino}) and dashboard (\texttt{docs/index.html}), supplied as a single zip.
+\end{itemize}
+
+\ifdefined\mainfile\else
+\end{document}
+\fi

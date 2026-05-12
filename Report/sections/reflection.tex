@@ -1,0 +1,54 @@
+\ifdefined\mainfile\else
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage[a4paper, left=2.5cm, right=2.5cm, top=2.5cm, bottom=2.5cm]{geometry}
+\usepackage[colorlinks=true,linkcolor=black,citecolor=blue,urlcolor=blue]{hyperref}
+\begin{document}
+\fi
+
+\section{Reflection}
+\label{sec:reflection}
+
+\subsection{Problems we encountered}
+\label{sec:reflection-problems}
+
+\begin{itemize}
+    \item \textbf{Pin conflicts on the ESP8266.} The ESP only has a handful of "safe" GPIOs, and several of them have boot-time roles. Adding the OLED forced us to move a stepper coil pin (IN4 from D1 to D0), and our temporary MOSFET on the stepper power line turned out to be wired to TX, which silently killed serial logging until we tracked it down.
+    \item \textbf{Noisy LM35 readings.} The first temperature readings were both biased and noisy. The bias came from the ADC reference being miscalibrated; the noise came from sampling at full rate with no smoothing.
+    \item \textbf{Single-motor closure was unreliable.} A single motor pulling one string caused the bag to twist instead of sealing.
+    \item \textbf{Dashboard flashing \texttt{--}.} Whenever the dashboard wrote field 5, ThingSpeak created a new entry with the other fields blank. The dashboard's "latest entry" naively showed those blanks.
+    \item \textbf{OFFLINE detection.} Our first attempt watched HTTP status codes; ThingSpeak returned 200 OK even when the ESP was dead, because it was serving cached data.
+\end{itemize}
+
+\subsection{How we overcame them}
+\label{sec:reflection-overcame}
+
+\begin{itemize}
+    \item Drew up a full pinout table on a whiteboard before adding the OLED, then moved coil pins to free up the I\textsuperscript{2}C bus. Removed the MOSFET and instead pull all four coil pins LOW after every move to keep idle current down.
+    \item Calibrated the ADC reference to 2.667\,V and added an IIR filter (10-sample running mean blended 30/70 with the previous value). Errors fell to within $\pm$1\,\textdegree C.
+    \item Switched to two motors, one on each side, each with its own string. Closure is now reliable across $>$20 attempts.
+    \item Pulled the last 10 ThingSpeak entries and walked backwards to the most recent entry with \texttt{field1 != null}. No more flashes.
+    \item Replaced the HTTP-status check with an age check on the latest sensor reading: $>$90\,s = OFFLINE. This honestly reflects bin liveness even when ThingSpeak is happy.
+\end{itemize}
+
+\subsection{What we learned}
+\label{sec:reflection-learned}
+
+\begin{itemize}
+    \item Cloud-backed IoT pipelines work best when the cloud is the single source of truth and no two endpoints try to talk to each other directly. Once we accepted "ThingSpeak is the only middleman", every protocol question got simpler.
+    \item Free-tier rate limits shape the architecture more than we initially expected. The 15\,s minimum between ThingSpeak writes drove the cadence of the whole device, and the worst-case round-trip latency had to be communicated in the UI.
+    \item Diagnostic surfaces matter. We added an OFFLINE pill, toasts on Save, and verbose serial logging early -- and we relied on them every single session.
+    \item Mechanical design eats more time than firmware. The string-closure mechanism went through more iterations than the firmware did.
+\end{itemize}
+
+\subsection{Who did what}
+\label{sec:reflection-who}
+
+A complete breakdown with percentage distribution is given in Appendix~\ref{sec:appendix-who}. The log book entries for sessions 1--6 are available alongside the report bundle uploaded to DTU LEARN.
+
+\ifdefined\mainfile\else
+\end{document}
+\fi

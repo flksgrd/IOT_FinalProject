@@ -1,0 +1,72 @@
+\ifdefined\mainfile\else
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage[a4paper, left=2.5cm, right=2.5cm, top=2.5cm, bottom=2.5cm]{geometry}
+\usepackage[colorlinks=true,linkcolor=black,citecolor=blue,urlcolor=blue]{hyperref}
+\begin{document}
+\fi
+
+\section{Software design}
+\label{sec:software}
+
+The software has three layers: firmware on the ESP8266, the ThingSpeak cloud channel that mediates between everyone, and the static web dashboard hosted on Netlify. Each layer is independent -- if any one is restarted, the others keep working.
+
+\subsection{Firmware architecture (ESP8266)}
+\label{sec:firmware}
+
+The firmware is written in Arduino C++ and built around an explicit state machine. The main loop dispatches on a \texttt{State} variable and the four normal states (\textsc{load}, \textsc{check}, \textsc{close}, \textsc{empty\_me}) are joined by an error state (\textsc{help}) for overfill and stuck-motor conditions. Three independent concerns run alongside the state machine:
+
+\begin{itemize}
+    \item \textbf{Sensor sampling.} The HC-SR04 is read by sending a 10\,$\mu$s trigger pulse and timing the echo with \texttt{pulseIn()}; distance is converted using the speed of sound ($d = t \cdot 0.0343 / 2$ cm). The LM35 is sampled through the ESP's 10-bit ADC with the reference calibrated to 2.667\,V, and the raw reading is smoothed with an IIR filter (10-sample running mean blended 30/70 with the previous value).
+    \item \textbf{ThingSpeak push.} A non-blocking timer pushes fields 1--4 and 6 every 16\,s when data has changed (the free-tier minimum is 15\,s between writes).
+    \item \textbf{ThingSpeak poll.} A separate timer polls field 5 (the bag-count command from the dashboard) every 30\,s, leaving CPU headroom for the state machine.
+\end{itemize}
+
+To save power between pushes the WiFi radio is dropped into light-sleep, which cuts idle current significantly while still allowing the ESP to wake on a timer.
+
+\subsection{Cloud layer (ThingSpeak)}
+\label{sec:cloud}
+
+ThingSpeak channel 3364403 acts as the single source of truth. Six of its eight fields are in use; the mapping is shown in Table~\ref{tab:fields}.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{c|l|l|l}
+        \textbf{Field} & \textbf{Meaning} & \textbf{Written by} & \textbf{Read by} \\
+        \hline
+        1 & Distance (cm) from ultrasonic sensor & ESP & Dashboard \\
+        2 & Bags remaining                       & ESP & Dashboard, IFTTT React \\
+        3 & State (0=LOAD, 1=CHECK, 2=CLOSE, 3=EMPTY\_ME) & ESP & Dashboard \\
+        4 & Bag-full event (1 = full)            & ESP & IFTTT React \\
+        5 & Set-bag-count command                & Dashboard & ESP \\
+        6 & Temperature (\textdegree C) from LM35 & ESP & Dashboard \\
+    \end{tabular}
+    \caption{ThingSpeak field map}
+    \label{tab:fields}
+\end{table}
+
+\subsection{Dashboard (static HTML on Netlify)}
+\label{sec:dashboard}
+
+The dashboard at \url{https://dtutrash.netlify.app/} is a single HTML file (\texttt{docs/index.html}) of plain HTML/CSS/JavaScript -- no framework, no backend, no build step. Netlify just serves the file. The page calls the ThingSpeak feeds endpoint on a 5\,s timer, picks the most recent entry that actually contains ESP data (ignoring entries that only set field 5) and updates the cards. A POST-style write goes back the other way when the user clicks Save on the bag-count input.
+
+\subsection{Code, libraries and source}
+\label{sec:code}
+
+All firmware and dashboard code is in the project repository on GitHub. Third-party libraries used:
+
+\begin{itemize}
+    \item \texttt{ESP8266WiFi}, \texttt{ESP8266HTTPClient}, \texttt{ESP8266WebServer} -- WiFi and HTTP client (built into the ESP8266 Arduino core).
+    \item \texttt{Stepper} (Arduino built-in) -- driving the 28BYJ-48 motors.
+    \item \texttt{Adafruit\_GFX} + \texttt{Adafruit\_SSD1306} -- OLED rendering.
+    \item ThingSpeak HTTP REST API -- no client library; we issue raw \texttt{http.GET()} calls.
+\end{itemize}
+
+The submitted DTU LEARN bundle includes the complete Arduino sketch (\texttt{sketch\_apr16a.ino}) and the dashboard source (\texttt{docs/index.html}), as well as IFTTT/ThingSpeak React configuration screenshots so the cloud-side configuration is reproducible.
+
+\ifdefined\mainfile\else
+\end{document}
+\fi

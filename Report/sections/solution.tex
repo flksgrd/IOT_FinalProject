@@ -1,0 +1,37 @@
+\ifdefined\mainfile\else
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage[a4paper, left=2.5cm, right=2.5cm, top=2.5cm, bottom=2.5cm]{geometry}
+\usepackage[colorlinks=true,linkcolor=black,citecolor=blue,urlcolor=blue]{hyperref}
+\begin{document}
+\fi
+
+\section{Solution}
+\label{sec:solution}
+
+Our solution is a connected trash bin that closes its own bag and reports its status to a phone-friendly web dashboard. Internally the system has four parts that never talk to each other directly:
+
+\begin{itemize}
+    \item \textbf{ESP8266 in the bin} -- runs a state machine, reads sensors, drives the closure mechanism and pushes data to the cloud.
+    \item \textbf{ThingSpeak cloud channel} -- the shared noticeboard. The ESP and the dashboard both read from and write to the same numbered fields.
+    \item \textbf{Web dashboard} (\url{https://dtutrash.netlify.app/}) -- a single static HTML page that shows live bin status and lets the user reset the bag inventory.
+    \item \textbf{IFTTT push notifications} -- triggered by ThingSpeak React rules when a bag-full event fires or when the bag stock runs low.
+\end{itemize}
+
+\textbf{Instructions for use.} After mounting a new bag, the user presses the reset button. The bin then enters its \textsc{check} state and silently monitors the fill level using an ultrasonic sensor. When the distance from the sensor down to the trash drops below 10\,cm (\textasciitilde 80\% full), the bin enters its \textsc{close} state: two stepper motors pull plastic strings attached to the bag opening, tying it shut. The bin then enters \textsc{empty\_me} and pushes a notification to the user's phone. After the user replaces the bag and presses reset, the cycle starts over. The OLED display on the bin shows the current state and remaining bags so the user knows what is happening without checking their phone.
+
+Figure~\ref{fig:state-diagram} summarises the device-side state machine.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.6\linewidth]{images/system/state_diagram.png}
+    \caption{Device-side state machine. \textsc{reset} initialises the system after a bag is replaced. \textsc{check} polls the ultrasonic sensor; on \texttt{Full=1} it transitions to \textsc{close}, which drives the stepper motors and pushes a bag-full event. \textsc{emptyme} waits for the user to reset. \textsc{help} is an error state reached on overfill or stuck-motor conditions.}
+    \label{fig:state-diagram}
+\end{figure}
+
+\ifdefined\mainfile\else
+\end{document}
+\fi
