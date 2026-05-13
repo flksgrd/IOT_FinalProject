@@ -9,7 +9,7 @@
 \begin{document}
 \fi
 
-\section{Hardware design}
+\subsection{Hardware design}
 \label{sec:hardware}
 
 The brain of the bin is an \textbf{ESP8266 NodeMCU} module -- a small, cheap microcontroller board with built-in WiFi, programmed from the Arduino IDE. For our project the ESP8266 was the natural trade-off: cheap (\textasciitilde 30\,DKK), small enough to mount inside the bin lid, fast enough to drive the closure mechanism while still talking to the cloud, and natively WiFi-enabled so we do not need an external radio module. It was not, however, the ideal candidate: the ESP8266 only exposes a handful of usable GPIO pins and several of those have boot-time roles, which made the pin layout one of the recurring headaches of the project.
@@ -32,8 +32,8 @@ Around the ESP we built up the rest of the hardware listed in Table~\ref{tab:com
     \caption{Components used in the Smart Trash Bin}
     \label{tab:components}
 \end{table}
-
-Power is supplied over USB at 5\,V. The ESP8266 runs from its onboard 3.3\,V regulator, while the stepper drivers and the OLED share the 5\,V rail. The HC-SR04 outputs 5\,V on its Echo line, so it is divided down with a 1\,k$\Omega$/2\,k$\Omega$ resistor pair before reaching a 3.3\,V-only GPIO. The full pinout is listed in Table~\ref{tab:pinout}, and a larger circuit diagram is reproduced in the appendix.
+\noindent
+Power is supplied from a battery and convertet down to 5\,V. The ESP8266 runs from its onboard 3.3\,V regulator, while the stepper drivers and the OLED share the 5\,V rail. The HC-SR04 outputs 5\,V on its Echo line, so it is divided down with a 1\,k$\Omega$/2\,k$\Omega$ resistor pair before reaching a 3.3\,V-only GPIO. The full pinout is listed in Table~\ref{tab:pinout}, and a larger circuit diagram is reproduced in the appendix.
 
 \begin{table}[H]
     \centering
@@ -54,8 +54,7 @@ Power is supplied over USB at 5\,V. The ESP8266 runs from its onboard 3.3\,V reg
     \caption{Pinout for the ESP8266 module}
     \label{tab:pinout}
 \end{table}
-
-The chassis itself was modelled in CAD and 3D-printed in PLA, iterating through several prototypes. The final version uses two 28BYJ-48 steppers mounted on either side of the lid, each pulling its own plastic string attached to the bag opening. The dual-motor design distributes the closing force evenly and avoids the bag twisting on itself, which was a recurring failure mode of the single-motor prototype.
+\noindent
 
 \ifdefined\mainfile\else
 \end{document}

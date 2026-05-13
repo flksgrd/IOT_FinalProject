@@ -9,12 +9,41 @@
 \begin{document}
 \fi
 
-\section{Software design}
+\subsection{Software design}
 \label{sec:software}
 
-The software has three layers -- firmware on the ESP8266, a ThingSpeak channel that mediates between everyone, and the static web dashboard hosted on Netlify -- and each layer is independent: if any one of them is restarted, the others keep working.
+The software has four layers -- firmware on the ESP8266, a ThingSpeak channel that mediates between everyone, the static web dashboard hosted on Netlify, and IFTT web app implementation for pushing notifications on a phone -- and each layer is independent: if any one of them is restarted, the others keep working.
 \\ \\
-The firmware itself is written in Arduino C++ and built around an explicit state machine. The main loop dispatches on a \texttt{State} variable, and the four normal states (\textsc{load}, \textsc{check}, \textsc{close}, \textsc{empty\_me}) are joined by an error state (\textsc{help}) for overfill and stuck-motor conditions. Alongside the state machine, three concerns run on their own timers: the HC-SR04 is sampled by sending a 10\,$\mu$s trigger pulse and timing the echo, the LM35 is sampled through the ADC and smoothed with a 10-sample IIR filter blended 30/70 with the previous value, and a pair of non-blocking timers push fields 1--4 and 6 to ThingSpeak every 16\,s (the free-tier minimum is 15\,s) while polling field 5 -- the bag-count command from the dashboard -- every 30\,s. Between pushes the WiFi radio is dropped into light-sleep to cut idle current while still allowing the ESP to wake on a timer.
+The firmware itself is written in Arduino C++ and is structured by a state machine in the main loop. The State machine is controlled by the variable \texttt{current\_state}, the state variable can hold the enum values of (\texttt{LOAD}, \texttt{CHECK}, \texttt{CLOSE}, \texttt{EMPTY\_ME}). The States make the code easier to control and ensures the ESP only works on relevant tasks.\\\\
+In the \texttt{LOAD} state, the \texttt{LM35()} function is continuously run which is used to measure the temperature. The temperature is measured by using the 10-bit ADC to convert the analog Voltage value from the output of the LM35 to a digital 10-bit value, to make this value match the actual temperature, The ADC value has been calibrated using a thermometer as a reference. \\\\
+However, the theoretical reference voltage of $3.3\text{V}$ used in the standard conversion formula was very inaccurate in our temperature output. We found that the inaccuracy is mainly due to the tolerances of the internal resistors making up the voltage divider on the board. The chip has an internal reference voltage of $0-1\text{V}$, while the board accepts $0-3.3\text{V}$. To compensate for these hardware-specific issues, a single-point calibration was performed.\\\\
+The calibrated scaling factor is determined by comparing the initial temperature read by the system ($T_{read}$) to a known reference temperature ($T_{ref}$) measured with a precise external multimeter. The new calibration factor is calculated using the following equation:
+
+\begin{equation}
+    Factor_{cal} = \left( \frac{T_{ref}}{T_{read}} \right) \cdot Factor_{the}
+\end{equation}
+For this specific hardware setup, an initial measurement using the theoretical factor of $3.3$ yielded a reading of $31.3^\circ\text{C}$, while the actual reference temperature was measured to be $25.3^\circ\text{C}$ (We measured $253\text{mV}$ with a multimeter on our mounted LM35). Inserting these values into the formula yields the calibrated factor:
+
+\begin{equation}
+    Factor_{cal} = \left( \frac{25.3}{31.3} \right) \cdot 3.3 \approx 2.667
+\end{equation}
+
+\noindent This calibrated factor of $2.667$ replaces the theoretical $3.3$ multiplier in the conversion formula in the code. By implementing this corrected scaling factor, the linear relationship is almost restored, ensuring that the raw 10-bit ADC values are more accurately translated into the correct ambient temperature.
+\\\\
+\noindent To smooth the displayed temperature a moving average 10 sample first order IIR filter has been implemented which has the theoretical design of:
+\[
+y[n] = 0.3x[n] + 0.7y[n-1]
+\]\\
+This blends the current measured temperature with the previously calculated temperature at a 30/70 ratio. 
+\\
+In the \texttt{LOAD} state the ESP is polling whether the button has been pressed including a debounce functionality to make sure that the press was deliberate. When the button is pressed the moveBackward() function is run and the motors load the strings of the trashbag. The button press also sets the state  variable to \texttt{CHECK} which makes the code run the \texttt{CHECK} State. \\\\
+In the \texttt{CHECK} state the ESP samples the distance with the use of the ultrasonic distance sensor in the \texttt{UltraSense()} function with the HC-SR04. The distance is sampled by measuring the time between the sent trigger pulse and when the echo is received. in this state the \texttt{LM35()} function is also run which is described in the \texttt{LOAD} State. If the distance measured by the HC-SR04 sensor is 8cm or below the State variable is set to the \texttt{CLOSE} State which makes the ESP run the \texttt{Close} state code.\\\\
+In the Close State the \texttt{moveBackwards()} function which makes the Stepper motors pull the strings till full closure. When this task is done the state machine automatically enters the \texttt{EMPTY\_ME} State. 
+
+In the \texttt{EMPTY\_ME} State the ESP polls whether the button has been pressed including a debounce to make sure the press was deliberate. When the button has been pressed the moveForwards() function is run and the stepper motors release the trash bag strings and the State variable is set to the \texttt{LOAD} State.
+\\\\
+MADS SKRIV LIGE OM INTERNET DELEN HER\\
+and a pair of non-blocking timers push fields 1--4 and 6 to ThingSpeak every 16\,s (the free-tier minimum is 15\,s) while polling field 5 -- the bag-count command from the dashboard -- every 30\,s. Between pushes the WiFi radio is dropped into light-sleep to cut idle current while still allowing the ESP to wake on a timer.
 \\ \\
 ThingSpeak channel 3364403 acts as the single source of truth. Six of its eight fields are in use (Table~\ref{tab:fields}); the device and the dashboard read from and write to the same numbered fields rather than talking to each other directly, which is the same pattern used for the IFTTT notification path.
 
@@ -33,8 +62,8 @@ ThingSpeak channel 3364403 acts as the single source of truth. Six of its eight 
     \caption{ThingSpeak field map}
     \label{tab:fields}
 \end{table}
-
-All firmware and dashboard code lives in the project repository on GitHub, with the firmware in \texttt{Arduino\,kode/} and the dashboard in \texttt{docs/index.html}. The firmware relies on the standard ESP8266 Arduino core libraries (\texttt{ESP8266WiFi}, \texttt{ESP8266HTTPClient}), the built-in \texttt{Stepper} library for the 28BYJ-48 motors, and Adafruit's \texttt{GFX} + \texttt{SSD1306} libraries for the OLED; ThingSpeak's REST API is called directly via raw \texttt{http.GET()} requests with no client wrapper. The submitted DTU LEARN bundle includes the complete sketch, the dashboard source, and screenshots of the ThingSpeak React and IFTTT configuration so the cloud-side setup is reproducible.
+\noindent
+All firmware and dashboard code lives in the project repository on GitHub, with the firmware in \texttt{Arduino\,kode/} and the dashboard in \texttt{docs/index.html}.
 
 \ifdefined\mainfile\else
 \end{document}

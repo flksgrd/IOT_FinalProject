@@ -9,16 +9,79 @@
 \begin{document}
 \fi
 
-\section{Communication technologies}
+\section{Technical design}
 \label{sec:comms}
+\subsection{Technical Overview}
+The system is built around an ESP8266 microcontroller, which serves as the central control unit for sensing, processing, and communication. The smart bin is equipped with sensors to monitor the fill level of the trash as well as environmental conditions, enabling the system to operate automatically and efficiently.\\
+An embedded control system manages the different operational states of the bin, including monitoring, sealing, and standby modes. A full block digram of the system can be seen in Figure \ref{fig:hardware_block_diagram}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\linewidth]{Report//images//system/Hardware_block_diagram.png}
+    \caption{System Block diagram}
+    \label{fig:hardware_block_diagram}
+\end{figure}
 
-The bin reaches the user through a short chain of standard-issue technologies: \textbf{WiFi} at the edge, \textbf{HTTP} to the cloud, and \textbf{IFTTT webhooks} for phone notifications. Each link in the chain was picked because something further down already had to be there, so the integration code is small and most of the moving parts are services we do not host ourselves.
-\\ \\
-At the edge, the bin joins the home network over standard 2.4\,GHz WiFi using the ESP8266's built-in radio. We chose WiFi over alternatives such as Bluetooth or LoRaWAN because almost every household already has a router, so the bin is plug-and-play, and because WiFi gives the device direct access to the internet -- we can talk straight to ThingSpeak without needing a separate gateway. The trade-off is power: WiFi draws noticeably more than a low-power radio like Bluetooth, and the bin stops working if the home WiFi is down. For a mains-powered kitchen appliance both costs are acceptable.
-\\ \\
-All cloud communication uses ordinary HTTP GET requests against the ThingSpeak REST API. Writing a sample is a single URL fetch, reading the latest samples is another, and both the ESP and the dashboard speak exactly the same protocol -- the integration code is symmetric and trivially simple. The main downsides are that traffic is unencrypted (acceptable for non-sensitive telemetry but not for production) and that each push is a full TCP+HTTP round-trip, which is heavy compared to a long-lived MQTT session.
-\\ \\
-Phone notifications go through a ThingSpeak \emph{React} rule that watches a field for a condition (\texttt{field4 = 1} or \texttt{field2 $<$ 3}) and fires a webhook to an IFTTT applet, which then delivers the push notification to the IFTTT app on the user's phone. This means we do not have to run a notification server of our own, the rules are configured in a browser without touching firmware, and the user gets native iOS/Android notifications. The downsides are that the extra hop adds a few seconds of latency and that both services can change their APIs without warning.
+\subsection{Control System}
+The control logic of the system is implemented as a state machine managed by the ESP8266. This approach ensures structured and predictable behavior across different operating conditions.\\
+The system operates in four main states: \textit{LOAD}, \textit{CHECK}, \textit{CLOSE}, and \textit{EMPTY\_ME}. Each state defines a specific phase of the system’s operation.\\
+In the \textit{LOAD} state, the system waits for the user to position the trash bag and press a button to initialize the process. Once the button is pressed, the system prepares the bag for normal operation and transitions to the next state.\\
+In the \textit{CHECK} state, the system periodically measures the fill level of the trash bin at fixed time intervals of 15 minutes. Based on these measurements, the system determines whether the bin has reached a predefined threshold of 8cm or less.\\
+When this threshold is reached, the system transitions to the \textit{CLOSE} state. In this state, the closing mechanism is activated to seal the trash bag.\\
+After the bag has been sealed, the system transitions to the \textit{EMPTY\_ME} state. In this final state, the system waits for user input before preparing the bin for emptying and resetting the system for the next cycle.
+\begin{figure}[H]
+\centering
+\resizebox{0.7\textwidth}{!}{
+\begin{circuitikz}
+\tikzstyle{every node}=[font=\fontsize{18.2pt}{23.7pt}\selectfont]
+
+% Definer de 4 states
+\draw  (7,25) circle (1.875cm) node[ inner xsep=0.080cm, inner ysep=0.085cm, rounded corners=0.020cm] {\fontsize{19.9pt}{25.9pt}\selectfont Load} ;
+\draw  (16,25) circle (1.875cm) node[ inner xsep=0.080cm, inner ysep=0.085cm, rounded corners=0.020cm] {\fontsize{19.9pt}{25.9pt}\selectfont Check} ;
+\draw  (16,16) circle (1.875cm) node[ inner xsep=0.080cm, inner ysep=0.085cm, rounded corners=0.020cm] {\fontsize{19.9pt}{25.9pt}\selectfont Close} ;
+\draw  (7,16) circle (1.875cm) node[ inner xsep=0.080cm, inner ysep=0.085cm, rounded corners=0.020cm] {\fontsize{19.9pt}{25.9pt}\selectfont EmptyMe} ;
+
+% Pile og betingelser (Transitions)
+% Load -> Check
+\draw [-{Stealth[scale=1.5]}, ] (8.875,25) -- (14.125,25) 
+    node[pos=0.5, fill={rgb,255:red,255; green,255; blue,255}, fill opacity=1, text opacity=1, inner xsep=0.080cm, inner ysep=0.085cm, rounded corners=0.020cm] {Button = HIGH};
+
+% Check -> Close
+\draw [-{Stealth[scale=1.5]}, ] (16,23.125) -- (16,17.875) 
+    node[pos=0.5, fill={rgb,255:red,255; green,255; blue,255}, fill opacity=1, text opacity=1, inner xsep=0.080cm, inner ysep=0.085cm, rounded corners=0.020cm] {Distance $\le$ 8 cm};
+
+% Close -> EmptyMe
+\draw [-{Stealth[scale=1.5]}, ] (14.125,16) -- (8.875,16) 
+    node[pos=0.5, fill={rgb,255:red,255; green,255; blue,255}, fill opacity=1, text opacity=1, inner xsep=0.080cm, inner ysep=0.085cm, rounded corners=0.020cm] {Motors done};
+
+% EmptyMe -> Load
+\draw [-{Stealth[scale=1.5]}, ] (7,17.875) -- (7,23.125) 
+    node[pos=0.5, fill={rgb,255:red,255; green,255; blue,255}, fill opacity=1, text opacity=1, inner xsep=0.080cm, inner ysep=0.085cm, rounded corners=0.020cm] {Button = HIGH};
+
+\end{circuitikz}
+}
+\caption{State machine diagram for the smart trash bin}
+\label{fig:state-diagram}
+\end{figure}
+
+
+\subsection{Mechanical Design}
+The mechanical components of the system are based on a custom-designed 3D model of the trash bin. The design integrates both structural and functional elements into a single unit, ensuring compatibility with the embedded electronics.\\
+The closing mechanism consists of two stepper motors connected to a gear system. This mechanism is responsible for tightening and loosening the drawstrings of the trash bag.\\
+When activated, the motors rotate the gears in a controlled manner, allowing the system to pull the drawstrings and seal the bag. The direction of rotation can also be reversed, enabling the system to loosen the strings when the bag needs to be removed.\\
+The design ensures reliable operation while maintaining a compact form factor. Additionally, the custom 3D construction allows for precise alignment between mechanical and electronic components, contributing to the overall robustness of the system, Figure \ref{fig:cad_design} shows an exploded view of the 3D CAD model
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\linewidth]{Overleaf//images//screenshots/Cad_model.png}
+    \caption{3D CAD design of the trash bin}
+    \label{fig:cad_design}
+\end{figure}
+
+\subsection{Communication and Notifications
+}
+The system supports remote communication through Wi-Fi, enabling both monitoring and user notifications.\\
+Integration with the IFTTT platform allows the system to send push notifications directly to the user's smartphone. These notifications inform the user when the trash bin needs to be emptied or when the number of available trash bags falls below a predefined threshold.\\
+This functionality enhances usability by ensuring that users are kept informed and can take action when necessary, even when they are not physically near the device.
 
 \ifdefined\mainfile\else
 \end{document}
