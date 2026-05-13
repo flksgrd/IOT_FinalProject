@@ -64,7 +64,7 @@ This appendix reproduces the report's main figures at a larger size for readabil
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.45\textwidth]{images/screenshots/dashboard_main.png}
+    \includegraphics[width=0.45\textwidth]{Overleaf/images/screenshots/dashboard_main.png}
     \caption{Web dashboard hosted on Netlify -- live view of distance, bags remaining, temperature and FSM state, with the OFFLINE pill in the top-right corner. The "Set bag count" input writes to ThingSpeak field 5, which the ESP picks up on its next 30\,s poll.}
     \label{fig:dashboard-main}
 \end{figure}
@@ -74,46 +74,29 @@ This appendix reproduces the report's main figures at a larger size for readabil
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.95\textwidth]{images/screenshots/thingspeak_channel.png}
+    \includegraphics[width=0.95\textwidth]{Overleaf/images/screenshots/thingspeak_channel.png}
     \caption{ThingSpeak channel 3364403. Field 1 plots distance in cm, field 2 the bag inventory, field 3 the FSM state, field 4 the bag-full event flag, field 5 the dashboard's set-bag-count commands and field 6 the LM35 temperature reading.}
     \label{fig:thingspeak-channel}
 \end{figure}
 
+\subsection*{Phone Notifications}
+
 \begin{figure}[H]
     \centering
-    \tbdimg{phone screenshot of a received push notification}{phone\_notification.png}
-    % \includegraphics[width=0.4\textwidth]{images/screenshots/phone_notification.png}
+     \includegraphics[width=0.4\textwidth]{Overleaf/images/screenshots/phone_notification.png}
     \caption{Push notification as it arrives on the user's phone (sent by IFTTT in response to a ThingSpeak React rule).}
     \label{fig:phone-notification}
 \end{figure}
 
 % ------------------------------------------------------------------
-\subsection*{Bin and on-device display}
+\subsection*{Working prototype}
 
 \begin{figure}[H]
     \centering
-    \tbdimg{the assembled bin in its final form}{bin\_assembled.png}
-    % \includegraphics[width=0.7\textwidth]{images/screenshots/bin_assembled.png}
+    \includegraphics[width=0.7\textwidth, angle=-90]{Overleaf/images/screenshots/bin_assembled.jpg}
     \caption{The fully assembled Smart Trash Bin.}
     \label{fig:bin-assembled}
 \end{figure}
-
-\begin{figure}[H]
-    \centering
-    \tbdimg{close-up of the OLED display showing the current FSM state}{oled\_display.png}
-    % \includegraphics[width=0.5\textwidth]{images/screenshots/oled_display.png}
-    \caption{SSD1306 OLED on the bin lid.}
-    \label{fig:oled-display}
-\end{figure}
-
-\begin{figure}[H]
-    \centering
-    \tbdimg{close-up of the stepper closure mechanism}{closure\_mechanism.png}
-    % \includegraphics[width=0.7\textwidth]{images/screenshots/closure_mechanism.png}
-    \caption{Dual-motor closure mechanism pulling the bag's plastic strings.}
-    \label{fig:closure-mechanism}
-\end{figure}
-
 \ifdefined\mainfile\else
 \end{document}
 \fi

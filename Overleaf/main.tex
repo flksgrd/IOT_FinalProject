@@ -3,8 +3,10 @@
 \usepackage{circuitikz}
 \usepackage{graphicx} % Required for inserting images
 \usepackage[absolute,overlay]{textpos}
+\usepackage{subcaption}
 \usepackage{float} % H placement
 \usepackage{amsmath}
+\usepackage{pdfpages}
 \usepackage{amssymb}
 \usepackage[a4paper, left=2.5cm, right=2.5cm, top=2.5cm, bottom=2.5cm]{geometry}
 \usepackage{listings}           % Code listing support
@@ -123,7 +125,7 @@
 \end{textblock*}
 
 \begin{textblock*}{8cm}(8.3cm,13cm)
-    \fbox{\includegraphics[width=2.6cm]{images/frontpage/dtu_anders.png}}
+    \fbox{\includegraphics[width=1.95cm]{images/frontpage/dtu_anders.png}}
 \end{textblock*}
 \begin{textblock*}{8cm}(8.3cm,16cm)
     \textbf{Anders}
@@ -133,7 +135,7 @@
 \end{textblock*}
 
 \begin{textblock*}{8cm}(14.1cm,13cm)
-    \fbox{\includegraphics[width=2.6cm]{images/frontpage/dtu_tobias.png}}
+    \fbox{\includegraphics[width=1.95cm]{images/frontpage/dtu_tobias.png}}
 \end{textblock*}
 \begin{textblock*}{8cm}(14.1cm,16cm)
     \textbf{Tobias}
@@ -160,9 +162,9 @@
 \input{sections/executive-summary}
 \input{sections/pain}
 \input{sections/solution}
+\input{sections/communication-technologies}
 \input{sections/hardware-design}
 \input{sections/PCB-design}
-\input{sections/communication-technologies}
 \input{sections/software-design}
 \input{sections/data-presentation}
 \input{sections/testing}

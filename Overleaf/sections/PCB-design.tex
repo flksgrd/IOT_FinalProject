@@ -4,16 +4,37 @@
 \usepackage{float}
 \usepackage{amsmath}
 \usepackage{amssymb}
+\usepackage{subcaption}
 \usepackage[a4paper, left=2.5cm, right=2.5cm, top=2.5cm, bottom=2.5cm]{geometry}
 \usepackage[colorlinks=true,linkcolor=black,citecolor=blue,urlcolor=blue]{hyperref}
 \begin{document}
 \fi
 
-\section{PCB-design}
+\subsection{PCB-design}
 \label{sec:PCB design}
-As there was a lot of wires to keep track of we decided to make a PCB Board, The PCB schematic and board was made in Kicad. 
+As there was a lot of wires to keep track of we decided to make a PCB board. The PCB schematic and board was made in KiCad. The board collects all the wiring into a single compact design, replacing the breadboard prototype and reducing the risk of loose connections. The NodeMCU footprint was manually defined , as standard KiCad libraries did not include the correct pin spacing. 
 
-\includegraphics[width=0.9\textwidth]{images/screenshots/.png}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\textwidth]{Overleaf/images/PCB/Schematic.png}
+    \caption{Schematic}
+    \label{fig:PCB-schem}
+\end{figure}
+
+\begin{figure}[H]
+    \begin{subfigure}{0.5\textwidth}
+    \includegraphics[width=0.75\linewidth, height=8cm]{Overleaf/images/PCB/PCB.png} 
+    \end{subfigure}
+    \begin{subfigure}{0.5\textwidth}
+    \includegraphics[width=0.75\linewidth, height=8cm]{Overleaf/images/PCB/exist.png}
+    \end{subfigure}
+
+    \caption{PCB design and physical PCB}
+    \label{fig:}
+\end{figure}
+
+
+
 \ifdefined\mainfile\else
 \end{document}
 \fi
