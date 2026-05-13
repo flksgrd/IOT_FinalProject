@@ -42,7 +42,7 @@ In the Close State the \texttt{moveBackwards()} function which makes the Stepper
 
 In the \texttt{EMPTY\_ME} State the ESP polls whether the button has been pressed including a debounce to make sure the press was deliberate. When the button has been pressed the moveForwards() function is run and the stepper motors release the trash bag strings and the State variable is set to the \texttt{LOAD} State.
 \\\\
-The internet side of the firmware is intentionally thin. On boot the ESP joins the home WiFi using credentials stored in the sketch and retries automatically if the connection drops. From then on it talks to ThingSpeak over plain HTTP -- writes go to the \texttt{update} endpoint, reads to the \texttt{feeds.json} endpoint. The ESP is purely a client; it never opens a port or waits for incoming traffic, which keeps the firmware simple and makes the bin reachable from anywhere on the internet without port-forwarding. A pair of non-blocking timers push fields 1--4 and 6 to ThingSpeak every 16\,s (the free-tier minimum is 15\,s) while polling field 5 -- the bag-count command from the dashboard -- every 30\,s. Between pushes the WiFi radio is dropped into light-sleep to cut idle current while still allowing the ESP to wake on a timer.
+After each state transition the ESP pushes the current values -- distance, bags remaining, state, bag-full flag and temperature -- to ThingSpeak.
 \\ \\
 ThingSpeak channel 3364403 acts as the single source of truth. Six of its eight fields are in use (Table~\ref{tab:fields}); the device and the dashboard read from and write to the same numbered fields rather than talking to each other directly, which is the same pattern used for the IFTTT notification path.
 
