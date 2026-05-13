@@ -42,7 +42,7 @@ In the Close State the \texttt{moveBackwards()} function which makes the Stepper
 
 In the \texttt{EMPTY\_ME} State the ESP polls whether the button has been pressed including a debounce to make sure the press was deliberate. When the button has been pressed the moveForwards() function is run and the stepper motors release the trash bag strings and the State variable is set to the \texttt{LOAD} State.
 \\\\
-After each state transition the ESP pushes the current values -- distance, bags remaining, state, bag-full flag and temperature -- to ThingSpeak.
+The internet side of the firmware is intentionally simple. The ESP keeps a dirty flag (\texttt{tsDataDirty}) that is set whenever something observable changes -- a new ultrasonic or temperature reading, a state transition between \texttt{LOAD}/\texttt{CHECK}/\texttt{CLOSE}/\texttt{EMPTY\_ME}, or a remote bag-count command pulled from the dashboard. The main loop checks this flag on every iteration and, if it is set and at least 16\,s has passed since the last write (the ThingSpeak free-tier minimum is 15\,s), the current distance, bag count, state, bag-full flag and temperature are sent to ThingSpeak in a single HTTP request. In parallel a 30\,s timer polls field 5 so a new bag count typed into the dashboard reaches the bin within at most one polling cycle.
 \\ \\
 ThingSpeak channel 3364403 acts as the single source of truth. Six of its eight fields are in use (Table~\ref{tab:fields}); the device and the dashboard read from and write to the same numbered fields rather than talking to each other directly, which is the same pattern used for the IFTTT notification path.
 
