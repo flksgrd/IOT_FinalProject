@@ -21,7 +21,7 @@ The five biggest problems we ran into during the project, and how we resolved ea
     \item \textbf{Dashboard flashing \texttt{--}.} Whenever the dashboard wrote field 5, ThingSpeak created an entry with the other fields blank, and the naive "show the latest entry" code briefly showed dashes. Pulling the last 10 entries and walking backwards to the most recent one where \texttt{field1 != null} fixed the flash.
     \item \textbf{OFFLINE detection.} Our first attempt watched HTTP status codes, but ThingSpeak returned 200 OK even when the ESP was dead because it was serving cached data. Replacing the HTTP-status check with an age check on the latest sensor reading ($>$90\,s = OFFLINE) reflects bin liveness honestly.
 \end{itemize}
-
+\noindent
 The headline lessons from doing the project: cloud-backed IoT systems are easiest to reason about when the cloud is the single source of truth and the endpoints never talk to each other directly -- once we accepted that "ThingSpeak is the only middleman", every protocol question got simpler. Free-tier rate limits shape the architecture more than we expected; the 15\,s minimum between ThingSpeak writes drove the cadence of the whole device and the worst-case round-trip latency had to be communicated in the UI. Diagnostic surfaces matter, and we leaned on the OFFLINE pill, the Save toast and verbose serial logging every single session. And finally, the mechanical design ate more time than the firmware -- the string-closure mechanism went through more iterations than any other part of the project.
 \\ \\
 A complete who-did-what breakdown and the percentage distribution of effort is given in the appendix.
