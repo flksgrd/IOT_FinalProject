@@ -65,10 +65,12 @@ After the bag has been sealed, the system transitions to the \textit{EMPTY\_ME} 
 
 
 \subsection{Mechanical Design}
-The mechanical components of the system are based on a custom-designed 3D model of the trash bin. The design integrates both structural and functional elements into a single unit, ensuring compatibility with the embedded electronics.\\
-The closing mechanism consists of two stepper motors connected to a gear system. This mechanism is responsible for tightening and loosening the drawstrings of the trash bag.\\
-When activated, the motors rotate the gears in a controlled manner, allowing the system to pull the drawstrings and seal the bag. The direction of rotation can also be reversed, enabling the system to loosen the strings when the bag needs to be removed.\\
-The design ensures reliable operation while maintaining a compact form factor. Additionally, the custom 3D construction allows for precise alignment between mechanical and electronic components, contributing to the overall robustness of the system, Figure \ref{fig:cad_design} shows an exploded view of the 3D CAD model
+The mechanical components of the system are based on a custom-designed 3D model of the trash bin.
+The closing mechanism works by using two stepper motors to rotate two rollers with three O-rings on each. This mechanism pulls and releases the strings of the trash bag.
+When activated, the motors rotate the rollers, and the friction between the O-rings and the strings pulls the strings in and closes the bag. The direction of rotation can also be reversed to loosen the strings when the trash bag needs to be removed.
+The design keeps the closing/releasing mechanism compact while still allowing the rollers and motors to be aligned. Furthermore, the custom 3D construction allows for precise tolerances between the rollers and the stepper motors.
+The 3D design also features a lid with mounting points and cutouts for attaching the ultrasonic sensor and the button used to control the embedded system. 
+Figure \ref{fig:cad_design} shows an exploded view of the 3D CAD model.
 
 \begin{figure}[H]
     \centering
@@ -79,9 +81,7 @@ The design ensures reliable operation while maintaining a compact form factor. A
 
 \subsection{Communication and Notifications
 }
-The system supports remote communication through Wi-Fi, enabling both monitoring and user notifications.\\
-Integration with the IFTTT platform allows the system to send push notifications directly to the user's smartphone. These notifications inform the user when the trash bin needs to be emptied or when the number of available trash bags falls below a predefined threshold.\\
-This functionality enhances usability by ensuring that users are kept informed and can take action when necessary, even when they are not physically near the device.
+The ESP connects to the local WiFi network and pushes all its data to ThingSpeak over HTTP. On the notification side we use IFTTT(IF This Then That: two ThingSpeak React rules watch field 4 (bag-full flag) and field 2 (bags remaining) and fire a push notification to the user's phone when the bag is full or when the stock drops below three. Setup is minimal — the user installs the IFTTT app, connects the ThingSpeak service once, and from then on gets notified without having to check the dashboard. It is not a sophisticated solution, but for a prototype it means the bin can actually reach the user when they are in another room
 
 \ifdefined\mainfile\else
 \end{document}
