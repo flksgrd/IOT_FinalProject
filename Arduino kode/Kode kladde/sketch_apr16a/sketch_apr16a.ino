@@ -16,16 +16,16 @@ const uint8_t trigPin = 0;    // D3
 
 
 // Stepper wiring:
-// D5 (GPIO14) -> IN1
-// D7 (GPIO13) -> IN2
-// D6 (GPIO12) -> IN3
-// D0 (GPIO16)  -> IN4
+// D5 (GPIO14) -> IN1 for stepper 1 and IN4 for stepper 2
+// D7 (GPIO13) -> IN2 for stepper 1 and IN3 for stepper 2
+// D6 (GPIO12) -> IN3 for stepper 1 and IN2 for stepper 2
+// D0 (GPIO16) -> IN4 for stepper 1 and IN1 for stepper 2
 
 // OLED SSD1306 (I2C):
 // D2 (GPIO4)  -> SDA
 // D1 (GPIO5) -> SCL
 // LM35:
-// A0          -> Vout (10 mV/°C)
+// A0          -> Vout,LM35 (10 mV/°C)
 
 #define SDA_PIN      4   // D2
 #define SCL_PIN      5   // D1
@@ -69,6 +69,7 @@ State CurrentState = LOAD;
 Stepper myStepper(stepsPerRevolution, 14, 12, 13, 16);
 U8G2_SH1106_128X64_NONAME_F_SW_I2C display(U8G2_R0, SCL_PIN, SDA_PIN, U8X8_PIN_NONE);
 
+
 float avgTemp = 0;
 float OldTemp = 0;
 static uint8_t i = 0; 
@@ -79,24 +80,26 @@ void readLM35() {
 
   // LM35: 10 mV/°C; tune 2.667 to the board's real ADC reference
 
-  for(i = 0; i < Readings; i++){
-    raw += analogRead(A0);
+  for(i = 0; i < Readings; i++){ //for loop for combining 10 samples
+    
+    raw += analogRead(A0);       // the sum of 10 samples
     delay(10);
 
 }
 
-  float avgRaw = (float)raw / Readings;
+  float avgRaw = (float)raw / Readings;  //calculates the average of the 10 samples to enhance stability in the read value
   
-  Temp = avgRaw * (2.667f / 1023.0f) * 100.0f;   
+  Temp = avgRaw * (2.667f / 1023.0f) * 100.0f;   //voltage to celsius conversion
 
-  if (OldTemp == 0) {
+  if (OldTemp == 0) {       // to avoid a slow responsetime of the IIR filter when booting the OLD temp is equal to the first average
       OldTemp = Temp; 
   }
 
-  avgTemp = ((3.0f * Temp + 7.0f * OldTemp) / 10.0f); // IIR filter
+  avgTemp = ((3.0f * Temp + 7.0f * OldTemp) / 10.0f); // 10 sample moving average IIR filter with 30/70 weight
 
-  OldTemp = avgTemp;
+  OldTemp = avgTemp; //set to the last output of the IIR filter to update the reference that the measured temperature is weighed against
 
+//prints values 
   Serial.print("[LM35] raw="); Serial.print(raw);
   Serial.print("  temp="); Serial.println(avgTemp, 1);
   tsDataDirty = true;
@@ -121,7 +124,7 @@ void updateDisplay() {
   display.drawStr(0, 44, buf);
   display.sendBuffer();
 }
-
+//function that releases the strings of the trash bag
 void moveForward(int x) {
   for (int stepCount = 0; stepCount < x; stepCount++) {
     myStepper.step(1);
@@ -132,7 +135,7 @@ void moveForward(int x) {
   digitalWrite(13, LOW);
   digitalWrite(16, LOW);
 }
-
+//function that pulls the strings of the trash bag
 void moveBackward(int x) {
   for (int stepCount = 0; stepCount < x; stepCount++) {
     myStepper.step(-1);
@@ -180,7 +183,7 @@ void setup() {
 }
 
 
-
+// The funtion that senses the fill level utilizing the ultrasonic sensor
 void Ultra_Sense(){
   digitalWrite(trigPin, LOW);
   delayMicroseconds(2);
@@ -194,11 +197,10 @@ void Ultra_Sense(){
   Serial.print(distance);
   lastDistance = distance;
   tsDataDirty = true;
-  // TODO: only switch state after the reading stays low for a while, not instantly
-  // switch to CLOSE when trash is within ~8 cm of full
+
   if (distance <= 8){
 
-    if (CurrentState != CLOSE) pendingBagFull = true;
+    if (CurrentState != CLOSE) pendingBagFull = true; // if the trash bag is full ste state changes to the CLOSE state
     CurrentState = CLOSE;
 
   }else {
@@ -277,13 +279,13 @@ void loop() {
   // state machine
   switch(CurrentState){
 
-    case LOAD:
+    case LOAD: //when the button is pressed
       delay(500);
       readLM35();
-      if (digitalRead(buttonPin) == HIGH) {
+      if (digitalRead(buttonPin) == HIGH) { // button debounce function
           delay(100);
 
-        if (digitalRead(buttonPin) == HIGH) {
+        if (digitalRead(buttonPin) == HIGH) { // after the delay if the button is still pressed the stepper motors load the trash bag strings
           moveBackward(2*512);
           CurrentState = CHECK;
           tsDataDirty = true;
@@ -297,7 +299,7 @@ void loop() {
       }
     break;
 
-    case CHECK:
+    case CHECK: //Checks fill level with the ultrasonic sensor and measures the temperature
       delay(5000);
       Ultra_Sense();
       readLM35();
@@ -311,14 +313,14 @@ void loop() {
 
     break;
 
-    case CLOSE:
+    case CLOSE: // the state that closes the bags
       Serial.println("-> CLOSE");
       moveBackward(12*512);
       CurrentState = EMPTY_ME;
       tsDataDirty = true;
       updateDisplay();
     break;
-    case EMPTY_ME: // release bag strings, return to LOAD on button press
+    case EMPTY_ME: // release bag strings, and return to LOAD on button press
       Serial.println("-> EMPTY_ME");
       delay(100);
       if(digitalRead(buttonPin) == HIGH){
