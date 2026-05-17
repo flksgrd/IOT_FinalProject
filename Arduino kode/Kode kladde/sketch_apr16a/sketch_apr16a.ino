@@ -1,5 +1,4 @@
-// Påkrævede libraries (installer via Arduino IDE -> Sketch -> Include Library -> Manage Libraries):
-//   - "U8g2"  af oliver
+// Required library (Arduino IDE -> Manage Libraries): "U8g2" by oliver
 
 #include <Arduino.h>
 #include <Stepper.h>
@@ -8,15 +7,15 @@
 #include <WiFiClient.h>
 #include <U8g2lib.h>
 
-// der skal sikres at stepperen kan køre begge veje når nu steps per revolution er uint
-const uint16_t stepsPerRevolution = 2048; //16 bits to be able to hold 2048 in binary
-const uint16_t moveDistance = 512; //16 bits to be able to hold 512 in binary
+// 28BYJ-48: 2048 steps per revolution
+const uint16_t stepsPerRevolution = 2048;
+const uint16_t moveDistance = 512;
 const uint8_t buttonPin = 15; // D8
-const uint8_t echoPin = 2; //D4 (10k pull-up til 3.3V — boot-pin)
-const uint8_t trigPin = 0; //D3
+const uint8_t echoPin = 2;    // D4 (boot pin: 10k pull-up to 3.3V)
+const uint8_t trigPin = 0;    // D3
 
 
-// Virkende wiring stepper:
+// Stepper wiring:
 // D5 (GPIO14) -> IN1
 // D7 (GPIO13) -> IN2
 // D6 (GPIO12) -> IN3
@@ -31,21 +30,21 @@ const uint8_t trigPin = 0; //D3
 #define SDA_PIN      4   // D2
 #define SCL_PIN      5   // D1
 
-// WiFi (UDFYLD inden upload)
+// WiFi (fill in before upload)
 const char* WIFI_SSID     = "EKB";
 const char* WIFI_PASSWORD = "ekbballerup";
 
-// ThingSpeak: kanal 3364403. Free tier kræver min. 15s mellem writes -> push throttle 16s.
-// Field5 læses hvert 30s og bruges som fjern-kommando til at sætte antal poser.
+// ThingSpeak channel 3364403. Free tier needs >=15s between writes -> push throttle 16s.
+// Field5 is read every 30s and used as a remote command to set the bag count.
 const unsigned long TS_CHANNEL_ID    = 3364403UL;
 const char*         TS_WRITE_KEY     = "DAFOBTGX2VWN91LU";
 const char*         TS_READ_KEY      = "U38AWRSBJVBTPPJK";
 const unsigned long TS_PUSH_INTERVAL = 16000UL;
 const unsigned long TS_READ_INTERVAL = 30000UL;
 
-// Posekontrol: bagsRemaining tæller ned ved EMPTY_ME->LOAD (ny pose isat).
-// pendingBagFull sættes ved CLOSE-overgang så IFTTT kun fyres én gang pr. fyldning.
-// tsDataDirty markerer at der er nye værdier til næste throttle-vindue.
+// bagsRemaining counts down on EMPTY_ME->LOAD (new bag fitted).
+// pendingBagFull is set on the CLOSE transition so IFTTT fires only once per fill.
+// tsDataDirty marks that there are new values for the next throttle window.
 uint8_t bagsRemaining = 10;
 const uint8_t BAGS_LOW_THRESHOLD = 2;
 long lastField5EntryId = -1;
@@ -55,7 +54,7 @@ float lastDistance = -1.0f;
 unsigned long lastTsPush = 0;
 unsigned long lastTsRead = 0;
 
-// enum variable (illustrative state variable)
+// state machine states
 enum State{
 
   LOAD,
@@ -78,7 +77,7 @@ void readLM35() {
   float Temp = 0;
   uint16_t raw = 0; 
 
-  // LM35: 10 mV/°C. Juster 3.3f til faktisk ADC-reference for dit board.
+  // LM35: 10 mV/°C; tune 2.667 to the board's real ADC reference
 
   for(i = 0; i < Readings; i++){
     raw += analogRead(A0);
@@ -94,7 +93,7 @@ void readLM35() {
       OldTemp = Temp; 
   }
 
-  avgTemp = ((3.0f * Temp + 7.0f * OldTemp) / 10.0f); //IIR Filter 
+  avgTemp = ((3.0f * Temp + 7.0f * OldTemp) / 10.0f); // IIR filter
 
   OldTemp = avgTemp;
 
@@ -146,11 +145,11 @@ void moveBackward(int x) {
 }
 
 
-// Forbinder til WiFi ved boot med 15s timeout. tsTick() springer over uden WiFi.
+// Connects to WiFi at boot with a 15s timeout. tsTick() skips when no WiFi.
 void wifiConnect() {
   Serial.print("WiFi: ");
   WiFi.mode(WIFI_STA);
-  WiFi.setAutoReconnect(true);  // SDK genopretter forbindelse i baggrunden hvis routeren genstarter
+  WiFi.setAutoReconnect(true);  // SDK reconnects in the background if the router restarts
   WiFi.persistent(true);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   unsigned long start = millis();
@@ -190,13 +189,13 @@ void Ultra_Sense(){
   digitalWrite(trigPin, LOW);
 
   long duration = pulseIn(echoPin, HIGH, 12000);
-  if (duration == 0) { delay(20); return; } // No echo (lid is open, sensor is movec, etv.)
+  if (duration == 0) { delay(20); return; } // no echo: lid open or sensor moved
   float distance = duration * 0.034 / 2.0;
   Serial.print(distance);
   lastDistance = distance;
   tsDataDirty = true;
-  // *This if statement should trigger after a set amount of time ex 1min dosen't trigger imitietly
-  // Trigger state switch when trash is 10cm or closer to being complately full.
+  // TODO: only switch state after the reading stays low for a while, not instantly
+  // switch to CLOSE when trash is within ~8 cm of full
   if (distance <= 8){
 
     if (CurrentState != CLOSE) pendingBagFull = true;
@@ -211,8 +210,8 @@ void Ultra_Sense(){
 }
 
 
-// Pusher Field1=afstand, Field2=poser tilbage, Field3=state, Field4=bag-full event,
-//         Field6=temperatur (C), Field7=fugtighed (%)
+// Pushes field1=distance, field2=bags left, field3=state, field4=bag-full event,
+//        field6=temperature (C)
 void tsPush() {
   WiFiClient client;
   HTTPClient http;
@@ -230,8 +229,8 @@ void tsPush() {
   if (pendingBagFull) pendingBagFull = false;
 }
 
-// Læser seneste Field5 fra ThingSpeak; ny entry_id => bagsRemaining opdateres
-// (fjernkommando fra telefon via ThingSpeak app -> "Write to channel" -> Field5)
+// Reads the latest Field5 from ThingSpeak; a new entry_id => bagsRemaining is updated
+// (remote command from the phone via the ThingSpeak app -> "Write to channel" -> Field5)
 void tsCheckBagCommand() {
   WiFiClient client;
   HTTPClient http;
@@ -259,7 +258,7 @@ void tsCheckBagCommand() {
   http.end();
 }
 
-// Kaldes fra loop(). Throttler push (16s) og read (30s). Ikke-blokerende ift. state machine.
+// Called from loop(). Throttles push (16s) and read (30s). Non-blocking vs. the state machine.
 void tsTick() {
   if (WiFi.status() != WL_CONNECTED) return;
   unsigned long now = millis();
@@ -275,7 +274,7 @@ void tsTick() {
 }
 
 void loop() {
-  // State machine switch case
+  // state machine
   switch(CurrentState){
 
     case LOAD:
@@ -319,7 +318,7 @@ void loop() {
       tsDataDirty = true;
       updateDisplay();
     break;
-    case EMPTY_ME: //releases trash bag strings and returns to load when button is pressed.
+    case EMPTY_ME: // release bag strings, return to LOAD on button press
       Serial.println("-> EMPTY_ME");
       delay(100);
       if(digitalRead(buttonPin) == HIGH){
