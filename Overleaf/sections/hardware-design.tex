@@ -55,6 +55,7 @@ Power is supplied from a battery and convertet down to 5\,V. The ESP8266 runs fr
     \label{tab:pinout}
 \end{table}
 \noindent
+\newpage
 To check whether the bin could run without mains power we made a small power budget in MATLAB. The script sums the current drawn by the ESP8266, the OLED, the two sensors and the stepper driver, weights each by how long the bin spends in every state over a day, and includes the loss in the buck converter. Comparing a 9\,V alkaline battery with a pair of 18650 Li-ion cells, it shows that the alkaline option lasts well under a day with the WiFi always on, while the Li-ion pack lasts considerably longer, and that a modem-sleep or light-sleep mode would extend this further. Deep sleep was left out on purpose, since on the ESP8266 it resets the chip on wake and would lose the state machine and the bag counter.
 
 \ifdefined\mainfile\else
