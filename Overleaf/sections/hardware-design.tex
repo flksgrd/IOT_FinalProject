@@ -12,7 +12,7 @@
 \subsection{Hardware design}
 \label{sec:hardware}
 
-The brain of the bin is an \textbf{ESP8266 NodeMCU} module - it has Wifi-capabilities, which allows us to run the intended program. It was not, however, the ideal candidate: the ESP8266 only exposes a handful of usable GPIO pins and several of those have boot-time roles, which made the pin layout one of the recurring headaches of the project. However we manged to keep the entire system limited to a single ESP-unit, making the system cheaper to produce and sell.
+The brain of the bin is an \textbf{ESP8266 NodeMCU} module - it has Wifi-capabilities, which allows us to run the intended program. It was not, the ideal candidate: the ESP8266 only exposes a handful of usable GPIO pins and several of those have boot-time roles, which made the pin layout one of the recurring headaches of the project. However we manged to keep the entire system limited to a single ESP-unit, making the system cheaper to produce and sell.
 \\ \\
 Around the ESP we built up the rest of the hardware listed in Table~\ref{tab:components}. The selection satisfies the course's component requirements -- one analog sensor (LM35), one digital sensor (HC-SR04), one form of actuation (the steppers) and an on-device display (the OLED).
 
@@ -55,13 +55,12 @@ Power is supplied from a battery and convertet down to 5\,V. The ESP8266 runs fr
     \label{tab:pinout}
 \end{table}
 \noindent
-\newpage
-\noindent To check whether the bin could run without mains power we made a small power budget in MATLAB. The script sums the current drawn by the ESP8266, the OLED, the two sensors and the stepper driver, weights each by how long the bin spends in every state over a day, and includes the loss in the buck converter. Comparing a 9\,V alkaline battery with a pair of 18650 Li-ion cells, it shows that the alkaline option lasts well under a day with the WiFi always on, while the Li-ion pack lasts considerably longer, and that a modem-sleep or light-sleep mode would extend this further. Deep sleep was left out on purpose, since on the ESP8266 it resets the chip on wake and would lose the state machine and the bag counter.
+\noindent To check whether the bin could run without mains power we made a small power budget in MATLAB. The script sums the current drawn by the ESP8266, the OLED, the two sensors and the stepper driver, weights each by how long the bin spends in every state over a day, and includes the loss in the buck converter. Comparing a 9\,V alkaline battery with a pair of 18650 Li-ion cells, it shows that the alkaline option lasts well under a day with the WiFi always on, while the Li-ion pack lasts considerably longer, and that a modem-sleep or light-sleep mode would extend this further. Deep sleep was left out on purpose, since on the ESP8266 it resets the chip on wake and would lose the state machine.
 \begin{align*}
-Total_{Power} &= V_{5\text{V}}\, I_{\text{avg}}, & I_{\text{avg}} &= \frac{1}{T}\sum_{s} I_{s}\, t_{s} \\
-I_{\text{batt}} &= \frac{Total_{Power}}{\eta\, V_{\text{batt}}} + I_{q}, & t_{\text{life}} &= \frac{Q_{\text{batt}}}{I_{\text{batt}}}
+Total_{Power} &= V_{5\text{V}}\ I_{\text{avg}} & I_{\text{avg}} &= \frac{1}{T}\sum_{s} I_{s}\, t_{s} \\
+I_{\text{batt}} &= \frac{Total_{Power}}{\eta\, V_{\text{batt}}} + I_{q} & t_{\text{life}} &= \frac{Q_{\text{batt}}}{I_{\text{batt}}}
 \end{align*}
-\noindent where $I_{s}$ and $t_{s}$ are the average current and the time spent in state $s$ over one day $T$, $V_{5\text{V}}$ is the regulated rail voltage, $\eta$ the buck-converter efficiency, $I_{q}$ the buck and BMS quiescent current, and $Q_{\text{batt}}$ and $V_{\text{batt}}$ the battery charge and nominal voltage.
+\noindent where $I_{s}$ and $t_{s}$ are the average current and the time spent in state $s$ over one day $T$, $V_{5\text{V}}$ is the rail voltage, $\eta$ the buck-converter efficiency, $I_{q}$ the buck quiescent current, and $Q_{\text{batt}}$ and $V_{\text{batt}}$ the battery charge and nominal voltage.
 \noindent The graphs for the power calculations, can be found on the poster.
 \ifdefined\mainfile\else
 \end{document}
