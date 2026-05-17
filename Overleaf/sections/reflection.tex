@@ -22,8 +22,7 @@ The five biggest problems we ran into during the project, and how we resolved ea
 \end{itemize}
 \noindent
 Looking back, the thing that surprised us most was how much a free third-party service ended up dictating the design. ThingSpeak's free tier only allows one write every 15 seconds, so we set the push interval to 16 seconds, and that is the main reason a bag-count change made from the dashboard can take up to about a minute to reach the bin. We also underestimated the mechanical work: the string-closing mechanism was redesigned several times before it closed the bag reliably, while the firmware was comparatively quick to get working. What helped us the most day to day was keeping the debugging simple. The OFFLINE indicator on the dashboard and the serial log made it easy to see what the bin was doing whenever something broke.
-\\ \\
-A complete who-did-what breakdown and the percentage distribution of effort is given in the appendix.
+
 
 \ifdefined\mainfile\else
 \end{document}

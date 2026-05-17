@@ -12,7 +12,7 @@
 \section{Solution}
 \label{sec:solution}
 
-Our solution is a connected trash bin that closes its own bag and reports its status to a phone-friendly web dashboard. Internally the system has four parts that never talk to each other directly:
+Our solution is a cloud connected trash bin that closes its own bag and reports its status to a phone-friendly web dashboard. Internally the system has four parts that never talk to each other directly:
 
 \begin{itemize}
     \item \textbf{ESP8266 in the bin} -- runs a state machine, reads sensors, drives the closure mechanism and pushes data to the cloud.
@@ -21,7 +21,7 @@ Our solution is a connected trash bin that closes its own bag and reports its st
     \item \textbf{IFTTT push notifications} -- triggered by ThingSpeak React rules when a bag-full event fires or when the bag stock runs low.
 \end{itemize}
 \noindent
-\textbf{Instructions for use.} After mounting a new bag, the user presses the reset button. The bin then enters its \textsc{check} state and silently monitors the fill level using an ultrasonic sensor. When the distance from the sensor down to the trash drops below 8\,cm (\textasciitilde 80\% full), the bin enters its \textsc{close} state: two stepper motors pulls the plastic strings attached to the bag, closing the bag. The bin then enters \textsc{empty\_me} and pushes a notification to the user's phone. After the user replaces the bag and presses reset, the cycle starts over. The OLED display on the bin shows the current state so the user knows what is happening without checking their phone.
+\textbf{Instructions for use.} After mounting a new bag, the user presses the reset button. The bin then enters its \textsc{check} state and monitors the fill level using an ultrasonic sensor. When the distance from the sensor down to the trash drops below 8\,cm (\textasciitilde 80\% full), the bin enters its \textsc{close} state: two stepper motors pulls the plastic strings attached to the bag, closing the bag. The bin then enters \textsc{empty\_me} and pushes a notification to the user's phone. After the user replaces the bag and presses reset, the cycle starts over. The OLED display on the bin shows the current state so the user knows what is happening without checking their phone.
 \newpage
 Figure~\ref{fig:state-diagram} summarises the device-side state machine.
 
